@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/hotel/selectHotelDate.dart';
-import 'package:travel_pro/pages/related_place/related_place.dart';
-import 'package:travel_pro/pages/review/review.dart';
-import 'package:travel_pro/widget/carousel_pro/lib/carousel_pro.dart';
-import 'package:travel_pro/widget/column_builder.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/hotel/selectHotelDate.dart';
+import 'package:hotel_prive/pages/related_place/related_place.dart';
+import 'package:hotel_prive/pages/review/review.dart';
+import 'package:hotel_prive/widget/carousel_pro/lib/carousel_pro.dart';
+import 'package:hotel_prive/widget/column_builder.dart';
 
 class HotelRoom extends StatefulWidget {
   final String? title, imgPath, price;

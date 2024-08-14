@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/trip/trip_main.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/trip/trip_main.dart';
 
 class TripHome extends StatelessWidget {
   const TripHome({super.key});

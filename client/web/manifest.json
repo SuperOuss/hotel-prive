@@ -1,6 +1,6 @@
 {
-    "name": "travel_pro",
-    "short_name": "travel_pro",
+    "name": "hotel_prive",
+    "short_name": "hotel_prive",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

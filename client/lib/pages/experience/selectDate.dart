@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/payment/payment.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/payment/payment.dart';
 
 class SelectDate extends StatefulWidget {
   const SelectDate({super.key});

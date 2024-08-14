@@ -1,4 +1,4 @@
-# travel_pro
+# hotel_prive
 
 A new Flutter project.
 

@@ -3,7 +3,7 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:travel_pro/constant/constant.dart';
+import 'package:hotel_prive/constant/constant.dart';
 
 class InviteFriend extends StatefulWidget {
   const InviteFriend({super.key});

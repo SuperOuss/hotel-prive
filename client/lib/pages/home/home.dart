@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/experience/experience.dart';
-import 'package:travel_pro/pages/places/place.dart';
-import 'package:travel_pro/pages/places/recommended.dart';
-import 'package:travel_pro/pages/profile/profile.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/experience/experience.dart';
+import 'package:hotel_prive/pages/places/place.dart';
+import 'package:hotel_prive/pages/places/recommended.dart';
+import 'package:hotel_prive/pages/profile/profile.dart';
 
 class Homne extends StatefulWidget {
   const Homne({super.key});

@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/payment/payment.dart';
-import 'package:travel_pro/widget/column_builder.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/payment/payment.dart';
+import 'package:hotel_prive/widget/column_builder.dart';
 
 class SelectHotelDate extends StatefulWidget {
   final String? price;

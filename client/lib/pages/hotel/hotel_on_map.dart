@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/hotel/hotel_room.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/hotel/hotel_room.dart';
 
 class HotelOnMap extends StatefulWidget {
   final hotelList;

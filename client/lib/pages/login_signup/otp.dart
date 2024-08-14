@@ -5,8 +5,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/login_signup/register.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/login_signup/register.dart';
 
 class OTPScreen extends StatefulWidget {
   const OTPScreen({super.key});

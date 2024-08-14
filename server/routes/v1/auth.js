@@ -11,7 +11,7 @@ dotenv.config();
 const sequelize = new Sequelize(process.env.DATABASE_URL, { dialect: 'mysql', logging: console.log });
 const models = initModels(sequelize);
 
-const router = express.Router();w
+const router = express.Router();
 
 // Serialize user object to store in session
 passport.serializeUser((user, done) => {

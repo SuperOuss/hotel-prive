@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:travel_pro/constant/constant.dart';
+import 'package:hotel_prive/constant/constant.dart';
 
 class Favorite extends StatefulWidget {
   const Favorite({super.key});

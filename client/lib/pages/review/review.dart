@@ -1,8 +1,8 @@
 // ignore_for_file: prefer_typing_uninitialized_variables, library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/widget/column_builder.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/widget/column_builder.dart';
 
 class Review extends StatefulWidget {
   final reviewList;

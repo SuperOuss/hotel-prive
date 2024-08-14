@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/hotel/hotel_on_map.dart';
-import 'package:travel_pro/pages/hotel/hotel_room.dart';
-import 'package:travel_pro/widget/column_builder.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/hotel/hotel_on_map.dart';
+import 'package:hotel_prive/pages/hotel/hotel_room.dart';
+import 'package:hotel_prive/widget/column_builder.dart';
 
 class HotelList extends StatefulWidget {
   const HotelList({super.key});

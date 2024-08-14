@@ -1,8 +1,8 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/bottom_bar.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/bottom_bar.dart';
 
 class Payment extends StatefulWidget {
   const Payment({super.key});

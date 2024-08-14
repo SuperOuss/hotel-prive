@@ -3,8 +3,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/walkthrough/walkthrough.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/walkthrough/walkthrough.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -72,12 +72,12 @@ class _SplashScreenState extends State<SplashScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        'TravelPro',
+                        'Hotel Privé',
                         style: splashBigTextStyle,
                       ),
                       heightSpace,
                       Text(
-                        'Plan your trip with TravelPro',
+                        'Access the best hotel deals in the world',
                         style: whiteSmallLoginTextStyle,
                       ),
                     ],

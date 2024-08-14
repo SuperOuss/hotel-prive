@@ -4,12 +4,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/favorite/favorite.dart';
-import 'package:travel_pro/pages/home/home.dart';
-import 'package:travel_pro/pages/hotel/hotel_list.dart';
-import 'package:travel_pro/pages/profile/profile.dart';
-import 'package:travel_pro/pages/trip/trip_home.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/favorite/favorite.dart';
+import 'package:hotel_prive/pages/home/home.dart';
+import 'package:hotel_prive/pages/hotel/hotel_list.dart';
+import 'package:hotel_prive/pages/profile/profile.dart';
+import 'package:hotel_prive/pages/trip/trip_home.dart';
 
 class BottomBar extends StatefulWidget {
   const BottomBar({super.key});

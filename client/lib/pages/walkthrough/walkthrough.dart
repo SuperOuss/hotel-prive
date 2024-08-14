@@ -5,8 +5,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/login_signup/login.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/login_signup/login.dart';
 
 class WalkThrough extends StatefulWidget {
   const WalkThrough({super.key});
@@ -76,23 +76,23 @@ class _WalkThroughState extends State<WalkThrough> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                'The',
+                                'Welcome,',
                                 style: walkthroughWhiteBigTextStyle,
                               ),
                               const SizedBox(width: 7.0),
                               Text(
-                                'best travel',
+                                'dear traveller,',
                                 style: walkthroughPrimaryColorBigTextStyle,
                               ),
                             ],
                           ),
                           Text(
-                            'in the world',
+                            'to Hotel Prive',
                             style: walkthroughWhiteBigTextStyle,
                           ),
                           const SizedBox(height: 20.0),
                           Text(
-                            'lives without limits the world is made to explore and appreciate its beauty',
+                            'You have been invited to sample our private selection of exclusive hotel deals.\nInvite token n° OENFZBU',
                             style: walkrhroughWhiteSmallTextStyle,
                           ),
                         ],

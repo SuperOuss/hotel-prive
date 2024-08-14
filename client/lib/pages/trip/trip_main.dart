@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/places/place.dart';
-import 'package:travel_pro/pages/places/recommended.dart';
-import 'package:travel_pro/pages/trip/must_visit_place.dart';
-import 'package:travel_pro/widget/carousel_pro/lib/carousel_pro.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/places/place.dart';
+import 'package:hotel_prive/pages/places/recommended.dart';
+import 'package:hotel_prive/pages/trip/must_visit_place.dart';
+import 'package:hotel_prive/widget/carousel_pro/lib/carousel_pro.dart';
 
 class TripMain extends StatefulWidget {
   const TripMain({super.key});

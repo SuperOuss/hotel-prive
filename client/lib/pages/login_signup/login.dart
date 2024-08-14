@@ -1,13 +1,13 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/login_signup/otp.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/login_signup/otp.dart';
+
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -21,8 +21,8 @@ class _LoginState extends State<Login> {
   String phoneNumber = '';
   String? phoneIsoCode;
   final TextEditingController controller = TextEditingController();
-  String initialCountry = 'IN';
-  PhoneNumber number = PhoneNumber(isoCode: 'IN');
+  String initialCountry = 'MA';
+  PhoneNumber number = PhoneNumber(isoCode: 'MA');
   void onPhoneNumberChange(
       String number, String internationalizedPhoneNumber, String isoCode) {
     setState(() {
@@ -82,7 +82,7 @@ class _LoginState extends State<Login> {
                     Padding(
                       padding: const EdgeInsets.only(top: 20.0, left: 20.0),
                       child: Text(
-                        'Welcome back',
+                        'Welcome',
                         style: loginBigTextStyle,
                       ),
                     ),
@@ -90,7 +90,7 @@ class _LoginState extends State<Login> {
                     Padding(
                       padding: const EdgeInsets.only(left: 20.0),
                       child: Text(
-                        'Login in your account',
+                        'Lets get started',
                         style: whiteSmallLoginTextStyle,
                       ),
                     ),

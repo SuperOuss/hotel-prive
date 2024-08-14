@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/invite_friend/invite_friend.dart';
-import 'package:travel_pro/pages/login_signup/login.dart';
-import 'package:travel_pro/pages/notifications/notifications.dart';
-import 'package:travel_pro/pages/profile/edit_profile.dart';
-import 'package:travel_pro/pages/wallet/wallet.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/invite_friend/invite_friend.dart';
+import 'package:hotel_prive/pages/login_signup/login.dart';
+import 'package:hotel_prive/pages/notifications/notifications.dart';
+import 'package:hotel_prive/pages/profile/edit_profile.dart';
+import 'package:hotel_prive/pages/wallet/wallet.dart';
 
 class Profile extends StatelessWidget {
   const Profile({super.key});

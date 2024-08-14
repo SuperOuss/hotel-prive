@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:travel_pro/constant/constant.dart';
-import 'package:travel_pro/pages/experience/selectDate.dart';
-import 'package:travel_pro/widget/carousel_pro/lib/carousel_pro.dart';
+import 'package:hotel_prive/constant/constant.dart';
+import 'package:hotel_prive/pages/experience/selectDate.dart';
+import 'package:hotel_prive/widget/carousel_pro/lib/carousel_pro.dart';
 
 class Experience extends StatefulWidget {
   final String? title;
