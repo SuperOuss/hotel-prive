@@ -12,27 +12,27 @@ export default class user extends Model {
       },
       first_name: {
         type: DataTypes.STRING(100),
-        allowNull: false
+        allowNull: true
       },
       last_name: {
         type: DataTypes.STRING(100),        
-        allowNull: false
+        allowNull: true
       },
       email: {
         type: DataTypes.STRING(100),
-        allowNull: false
+        allowNull: true
       },
       countryCode: {
         type: DataTypes.STRING(20),
-        allowNull: false
+        allowNull: true
       },
       phone: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: true
       },
       password: {
         type: DataTypes.STRING(100),
-        allowNull: false
+        allowNull: true
       },
       fav_hotels: {
         type: DataTypes.JSON,
@@ -62,22 +62,4 @@ export default class user extends Model {
       ]
     });
   }
-/*   static associate(models) {
-    this.hasMany(models.comments, {
-      foreignKey: 'userId',
-      as: 'comments'
-    });
-    this.hasMany(models.location, {
-      foreignKey: 'userId',
-      as: 'location'
-    });
-    this.belongsTo(models.organisation, {
-      foreignKey: 'companyId',
-      as: 'company'
-    });
-    this.hasMany(models.statusChangeLog, {
-      foreignKey: 'userId',
-      as: 'status_change_log'
-    });
-  } */
 } 

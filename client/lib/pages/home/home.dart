@@ -1,48 +1,40 @@
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
+import 'package:hotel_prive/pages/hotel/hotel_list.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:hotel_prive/constant/constant.dart';
 import 'package:hotel_prive/pages/experience/experience.dart';
-import 'package:hotel_prive/pages/places/place.dart';
 import 'package:hotel_prive/pages/places/recommended.dart';
 import 'package:hotel_prive/pages/profile/profile.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 
 class Homne extends StatefulWidget {
-  const Homne({super.key});
+  final String? email;
+
+  const Homne({super.key, this.email});
 
   @override
   _HomneState createState() => _HomneState();
 }
 
+
+
 class _HomneState extends State<Homne> {
-  final popularPlacesList = [
-    {
-      'name': 'Miami',
-      'image': 'assets/popular_places/miami.jpg',
-      'property': '783 properties'
-    },
-    {
-      'name': 'Singapore',
-      'image': 'assets/popular_places/singapore.jpg',
-      'property': '593 properties'
-    },
-    {
-      'name': 'New York',
-      'image': 'assets/popular_places/newyork.jpg',
-      'property': '1025 properties'
-    },
-    {
-      'name': 'Venice',
-      'image': 'assets/popular_places/venice.jpg',
-      'property': '290 properties'
-    },
-    {
-      'name': 'Vietnam',
-      'image': 'assets/popular_places/vietnam.jpg',
-      'property': '193 properties'
-    }
-  ];
+  //main objects
+  List<Map<String, dynamic>> popularPlacesList = [];
+  Map<String, dynamic>? profile;
+  bool isLoading = false;
+
+//init state
+  @override
+  void initState() {
+    super.initState();
+    print('Email passed to Homne: ${widget.email}');
+    fetchUserData();
+  }
 
   final popularExperiencesList = [
     {
@@ -88,6 +80,98 @@ class _HomneState extends State<Homne> {
       'rating': '4.98'
     }
   ];
+  Future<Map<String, dynamic>> fetchDealsCount(double latitude,
+      double longitude, String countryCode, String city) async {
+    final response = await http.get(Uri.parse(
+        'http://localhost:3000/v1/get-deals?lat=$latitude&lon=$longitude&countryCode=$countryCode&city=$city'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print(data['results']);
+      print(data['dealCount']);
+      return {
+        'dealCount': data['dealCount'],
+        'hotelIds': data['results'].map((result) => result['hotelId']).toList(),
+      };
+    } else {
+      print('Failed to load deals count');
+      return {
+        'dealCount': 0,
+        'hotelIds': [],
+      };
+    }
+  }
+
+  Future<void> fetchUserData() async {
+    if (widget.email != null) {
+      final response = await http.get(
+          Uri.parse('http://localhost:3000/v1/get-user?email=${widget.email}'));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          profile = json.decode(response.body);
+          print('Fetched user profile: $profile');
+        });
+        updatePopularPlacesList();
+      } else {
+        print('Failed to load user data');
+      }
+    }
+  }
+
+  Future<String> fetchCityImage(String cityName) async {
+    final response = await http.get(Uri.parse(
+        'https://api.unsplash.com/photos/random?query=$cityName&client_id=TGy1U2upYzZGIXg4SYGDcxNUDoToBSKN28iWSfKwQcc'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['urls']['small_s3'];
+    } else {
+      print('Failed to load image for $cityName');
+      return 'https://www.shutterstock.com/image-vector/city-skyline-vector-illustration-urban-260nw-720375790.jpg'; // Fallback image URL
+    }
+  }
+
+  void updatePopularPlacesList() async {
+    if (profile != null && profile!['fav_locations'] != null) {
+      List<Map<String, dynamic>> updatedList = [];
+
+      for (var location in profile!['fav_locations']) {
+        updatedList.add({
+          'name': location['city'],
+          'image': await fetchCityImage(location['city']),
+          'deals': 'Fetching deals...',
+          'loading': true,
+          'latitude': location['latitude'],
+          'longitude': location['longitude'],
+          'countryCode': location['countryCode'],
+          'city': location['city'],
+          'hotelIds': [],
+        });
+      }
+
+      setState(() {
+        popularPlacesList = updatedList;
+      });
+
+      for (var i = 0; i < updatedList.length; i++) {
+        final result = await fetchDealsCount(
+          updatedList[i]['latitude'],
+          updatedList[i]['longitude'],
+          updatedList[i]['countryCode'],
+          updatedList[i]['city'],
+        );
+
+        setState(() {
+          popularPlacesList[i]['deals'] = '${result['dealCount']} deals';
+          popularPlacesList[i]['loading'] = false;
+          popularPlacesList[i]['hotelIds'] = result['hotelIds'];
+        });
+      }
+    }
+  }
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,11 +191,11 @@ class _HomneState extends State<Homne> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hello, Ellison',
+                      'Hello, Oussama',
                       style: smallBoldGreyTextStyle,
                     ),
                     Text(
-                      'Find deals',
+                      'Your deals',
                       style: extraLargeBlackTextStyle,
                     ),
                   ],
@@ -131,7 +215,7 @@ class _HomneState extends State<Homne> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20.0),
                       image: const DecorationImage(
-                        image: AssetImage('assets/user.jpg'),
+                        image: AssetImage('assets/profil.jpg'),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -181,98 +265,98 @@ class _HomneState extends State<Homne> {
     );
   }
 
-  popularPlaces() {
-    double width = MediaQuery.of(context).size.width;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding:
-              EdgeInsets.only(right: fixPadding * 2.0, left: fixPadding * 2.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text('Popular Places', style: blackHeadingTextStyle),
-              Text('View all', style: smallBoldGreyTextStyle),
-            ],
-          ),
+  Widget popularPlaces() {
+  double width = MediaQuery.of(context).size.width;
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Padding(
+        padding: EdgeInsets.only(right: fixPadding * 2.0, left: fixPadding * 2.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Your locations', style: blackHeadingTextStyle),
+            Text('View all', style: smallBoldGreyTextStyle),
+          ],
         ),
-        heightSpace,
-        heightSpace,
-        SizedBox(
-          width: width,
-          height: 150.0,
-          child: ListView.builder(
-            itemCount: popularPlacesList.length,
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              final item = popularPlacesList[index];
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      PageTransition(
-                          type: PageTransitionType.fade,
-                          duration: const Duration(milliseconds: 1000),
-                          child: Place(
-                            title: item['name']!,
-                            image: item['image']!,
-                          )));
-                },
+      ),
+      heightSpace,
+      heightSpace,
+      SizedBox(
+        width: width,
+        height: 150.0,
+        child: ListView.builder(
+          itemCount: popularPlacesList.length,
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemBuilder: (context, index) {
+            final item = popularPlacesList[index];
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  PageTransition(
+                    type: PageTransitionType.fade,
+                    duration: const Duration(milliseconds: 1000),
+                    child: HotelList(
+                      hotelIds: item['hotelIds'], // Pass hotelIds here
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                width: 130.0,
+                margin: (index == popularPlacesList.length - 1)
+                    ? EdgeInsets.only(left: fixPadding, right: fixPadding * 2.0)
+                    : (index == 0)
+                        ? EdgeInsets.only(left: fixPadding * 2.0)
+                        : EdgeInsets.only(left: fixPadding),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(item['image']!),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
                 child: Container(
                   width: 130.0,
-                  margin: (index == popularPlacesList.length - 1)
-                      ? EdgeInsets.only(
-                          left: fixPadding, right: fixPadding * 2.0)
-                      : (index == 0)
-                          ? EdgeInsets.only(left: fixPadding * 2.0)
-                          : EdgeInsets.only(left: fixPadding),
+                  height: 150.0,
+                  padding: EdgeInsets.all(fixPadding * 1.5),
+                  alignment: Alignment.bottomLeft,
                   decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(item['image']!),
-                      fit: BoxFit.cover,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.1, 0.5, 0.9],
+                      colors: [
+                        blackColor.withOpacity(0.0),
+                        blackColor.withOpacity(0.3),
+                        blackColor.withOpacity(0.7),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(15.0),
                   ),
-                  child: Container(
-                    width: 130.0,
-                    height: 150.0,
-                    padding: EdgeInsets.all(fixPadding * 1.5),
-                    alignment: Alignment.bottomLeft,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.1, 0.5, 0.9],
-                        colors: [
-                          blackColor.withOpacity(0.0),
-                          blackColor.withOpacity(0.3),
-                          blackColor.withOpacity(0.7),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item['name']!, style: whiteSmallBoldTextStyle),
-                        Text(item['property']!,
-                            style: whiteExtraSmallTextStyle),
-                      ],
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item['name']!, style: whiteSmallBoldTextStyle),
+                      item['loading'] == true
+                          ? CircularProgressIndicator()
+                          : Text(item['deals']!, style: whiteExtraSmallTextStyle),
+                    ],
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   popularExperiences() {
     double width = MediaQuery.of(context).size.width;

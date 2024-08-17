@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:google_places_flutter/model/place_type.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:hotel_prive/pages/bottom_bar.dart';
@@ -7,6 +8,8 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:google_places_flutter/model/prediction.dart';
 import 'package:hotel_prive/models/location.dart';
 import 'package:hotel_prive/models/lat_lng.dart';
+import 'package:hotel_prive/functions/autocomplete.dart';
+import 'package:http/http.dart' as http;
 
 const kGoogleApiKey = "AIzaSyB2aCM5jw8tP7zyRH6QjndhkfNmE4A0x0I";
 
@@ -26,6 +29,10 @@ class _RegisterState extends State<Register> {
   String tempLng = '';
   List<LatLng> latLngList = [];
   final List<String> selectedCities = []; // List to store selected cities
+  final FocusNode _placesFocusNode = FocusNode();
+  final FocusNode _hotelsFocusNode = FocusNode();
+  List<String> hotelIds = [];
+  final TextEditingController _emailController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +99,28 @@ class _RegisterState extends State<Register> {
                   ),
                   const SizedBox(height: 20.0),
                   Padding(
-                    padding: const EdgeInsets.only(right: 20.0, left: 20.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200]!.withOpacity(0.3),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(20.0)),
+                      ),
+                      child: AutocompleteField(
+                        hotelsFocusNode: _hotelsFocusNode,
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.only(left: 20.0),
+                          hintText: 'Hotel Name',
+                          hintStyle: inputLoginTextStyle,
+                          border: InputBorder.none,
+                        ),
+                        onHotelIdsChanged: _handleHotelIdsChanged,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.grey[200]!.withOpacity(0.3),
@@ -100,6 +128,7 @@ class _RegisterState extends State<Register> {
                             const BorderRadius.all(Radius.circular(20.0)),
                       ),
                       child: TextField(
+                        controller: _emailController,
                         style: inputLoginTextStyle,
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.only(left: 20.0),
@@ -110,46 +139,12 @@ class _RegisterState extends State<Register> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20.0),
                   Padding(
-                    padding: const EdgeInsets.only(right: 20.0, left: 20.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200]!.withOpacity(0.3),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(20.0)),
-                      ),
-                      child: TextField(
-                        style: inputLoginTextStyle,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 20.0),
-                          hintText: 'Password',
-                          hintStyle: inputLoginTextStyle,
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 20.0, left: 20.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200]!.withOpacity(0.3),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(20.0)),
-                      ),
-                      child: TextField(
-                        style: inputLoginTextStyle,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 20.0),
-                          hintText: 'Confirm Password',
-                          hintStyle: inputLoginTextStyle,
-                          border: InputBorder.none,
-                        ),
-                      ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 10.0),
+                    child: Text(
+                      'We will use your location and hotel preferences to send you the best deals. You can change your preferences at any time in your profile.',
+                      style: walkrhroughWhiteSmallTextStyle,
                     ),
                   ),
                   const SizedBox(height: 40.0),
@@ -157,13 +152,19 @@ class _RegisterState extends State<Register> {
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(30.0),
-                      onTap: () {
+                      onTap: () async {
+                        final email = _emailController
+                            .text; // Get the email from the controller
+                        await sendDataToBackend();
                         Navigator.push(
-                            context,
-                            PageTransition(
-                                duration: const Duration(milliseconds: 600),
-                                type: PageTransitionType.fade,
-                                child: const BottomBar()));
+                          context,
+                          PageTransition(
+                            duration: const Duration(milliseconds: 600),
+                            type: PageTransitionType.fade,
+                            child:
+                                BottomBar(email: email), // Pass the email here
+                          ),
+                        );
                       },
                       child: Container(
                         height: 50.0,
@@ -200,72 +201,69 @@ class _RegisterState extends State<Register> {
   }
 
   Widget placesAutoCompleteTextField() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 20.0, left: 20.0),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[200]!.withOpacity(0.3),
+        borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[200]!.withOpacity(0.3),
-              borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+          GooglePlaceAutoCompleteTextField(
+            focusNode: _placesFocusNode,
+            textEditingController: controller,
+            googleAPIKey: kGoogleApiKey,
+            inputDecoration: InputDecoration(
+              contentPadding: const EdgeInsets.only(left: 20.0),
+              hintText: "Search your location",
+              hintStyle: inputLoginTextStyle,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
             ),
-            child: GooglePlaceAutoCompleteTextField(
-              textEditingController: controller,
-              googleAPIKey: kGoogleApiKey,
-              inputDecoration: InputDecoration(
-                contentPadding: const EdgeInsets.only(left: 20.0),
-                hintText: "Search your location",
-                hintStyle: inputLoginTextStyle,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-              ),
-              textStyle: inputLoginTextStyle,
-              debounceTime: 400,
-              placeType: PlaceType.cities, // Restrict results to cities
-              isLatLngRequired: true,
-              getPlaceDetailWithLatLng: (Prediction prediction) {
-                print("placeDetails" + prediction.lat.toString());
-                setState(() {
-                  tempLat = prediction.lat.toString();
-                  tempLng = prediction.lng.toString();
-                  // Print the temporary variables
-                });
-                _organizeLatLng();
-              },
-              itemClick: (Prediction prediction) {
-                setState(() {
-                  // Assuming prediction.description contains both city and country
-                  final parts = (prediction.description ?? "").split(", ");
-                  final city = parts.isNotEmpty ? parts[0] : "";
-                  final country = parts.length > 1 ? parts[1] : "";
-                  final location = Location(city: city, country: country);
-                  locations.add(location);
-                  selectedCities.add(prediction.description ?? "");
+            textStyle: inputLoginTextStyle,
+            debounceTime: 400,
+            placeType: PlaceType.cities, // Restrict results to cities
+            isLatLngRequired: true,
+            getPlaceDetailWithLatLng: (Prediction prediction) {
+              print("placeDetails" + prediction.lat.toString());
+              setState(() {
+                tempLat = prediction.lat.toString();
+                tempLng = prediction.lng.toString();
+                // Print the temporary variables
+              });
+              _organizeLatLng();
+            },
+            itemClick: (Prediction prediction) {
+              setState(() {
+                // Assuming prediction.description contains both city and country
+                final parts = (prediction.description ?? "").split(", ");
+                final city = parts.isNotEmpty ? parts[0] : "";
+                final country = parts.length > 1 ? parts[1] : "";
+                final location = Location(city: city, country: country);
+                locations.add(location);
+                selectedCities.add(prediction.description ?? "");
 
-                  // Debug statement to print all stored locations
-                  print("All Stored Locations:");
-                  for (var loc in locations) {
-                    print("City: ${loc.city}, Country: ${loc.country}");
-                  }
-                });
-                controller.clear();
-              },
-              containerHorizontalPadding: 10,
-              itemBuilder: (context, index, Prediction prediction) {
-                return Container(
-                  padding: EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Icon(Icons.location_on),
-                      SizedBox(width: 7),
-                      Expanded(child: Text("${prediction.description ?? ""}"))
-                    ],
-                  ),
-                );
-              },
-              isCrossBtnShown: true,
-            ),
+                // Debug statement to print all stored locations
+                print("All Stored Locations:");
+                for (var loc in locations) {
+                  print("City: ${loc.city}, Country: ${loc.country}");
+                }
+              });
+              controller.clear();
+            },
+            containerHorizontalPadding: 10,
+            itemBuilder: (context, index, Prediction prediction) {
+              return Container(
+                padding: EdgeInsets.all(10),
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on),
+                    SizedBox(width: 7),
+                    Expanded(child: Text("${prediction.description ?? ""}"))
+                  ],
+                ),
+              );
+            },
+            isCrossBtnShown: true,
           ),
           SizedBox(height: 10),
           Wrap(
@@ -293,6 +291,52 @@ class _RegisterState extends State<Register> {
         latitude: double.parse(tempLat),
         longitude: double.parse(tempLng),
       ));
+    }
+  }
+
+  void _handleHotelIdsChanged(List<String> ids) {
+    setState(() {
+      hotelIds = ids;
+    });
+    print('Hotel IDs in RegisterPage: $hotelIds'); // Debug print
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  //send data to back end
+  Future<void> sendDataToBackend() async {
+    final url = Uri.parse(
+        'http://localhost:3000/v1/create-user'); // Replace with your backend API URL
+
+    final Map<String, dynamic> data = {
+      'email': _emailController.text,
+      'hotelIds': hotelIds,
+      'latLngList': latLngList
+          .map((latLng) => {
+                'latitude': latLng.latitude,
+                'longitude': latLng.longitude,
+              })
+          .toList(),
+    };
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode(data),
+    );
+
+    if (response.statusCode == 200) {
+      // Handle successful response
+      print('Data sent successfully');
+    } else {
+      // Handle error response
+      print('Failed to send data: ${response.statusCode}');
     }
   }
 }

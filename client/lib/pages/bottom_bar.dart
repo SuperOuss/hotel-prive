@@ -1,7 +1,6 @@
-// ignore_for_file: library_private_types_in_public_api
+// bottom_bar.dart
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hotel_prive/constant/constant.dart';
@@ -10,9 +9,13 @@ import 'package:hotel_prive/pages/home/home.dart';
 import 'package:hotel_prive/pages/hotel/hotel_list.dart';
 import 'package:hotel_prive/pages/profile/profile.dart';
 import 'package:hotel_prive/pages/trip/trip_home.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BottomBar extends StatefulWidget {
-  const BottomBar({super.key});
+  final String? email;
+
+  const BottomBar({super.key, this.email});
 
   @override
   _BottomBarState createState() => _BottomBarState();
@@ -21,6 +24,31 @@ class BottomBar extends StatefulWidget {
 class _BottomBarState extends State<BottomBar> {
   int currentIndex = 0;
   DateTime? currentBackPressTime;
+  Map<String, dynamic>? profile;
+
+  //init state
+  @override
+  void initState() {
+    super.initState();
+    print('Email passed to Homne: ${widget.email}');
+    fetchUserData();
+  }
+
+    Future<void> fetchUserData() async {
+    if (widget.email != null) {
+      final response = await http.get(
+          Uri.parse('http://localhost:3000/v1/get-user?email=${widget.email}'));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          profile = json.decode(response.body);
+          print('Fetched user profile: $profile');
+        });
+      } else {
+        print('Failed to load user data');
+      }
+    }
+  }
 
   changeIndex(index) {
     setState(() {
@@ -41,7 +69,7 @@ class _BottomBarState extends State<BottomBar> {
             children: [
               getBottomBarItemTile(0, Icons.home),
               getBottomBarItemTile(1, Icons.hotel),
-              getBottomBarItemTile(2, Icons.flight_takeoff),
+              getBottomBarItemTile(2, Icons.search),
               getBottomBarItemTile(3, Icons.favorite),
               getBottomBarItemTile(4, Icons.person),
             ],
@@ -56,17 +84,26 @@ class _BottomBarState extends State<BottomBar> {
             exit(0);
           }
         },
-        child: (currentIndex == 0)
-            ? const Homne()
-            : (currentIndex == 1)
-                ? const HotelList()
-                : (currentIndex == 2)
-                    ? const TripHome()
-                    : (currentIndex == 3)
-                        ? const Favorite()
-                        : const Profile(),
+        child: getCurrentPage(),
       ),
     );
+  }
+
+  Widget getCurrentPage() {
+    switch (currentIndex) {
+      case 0:
+        return Homne(email: widget.email);
+      case 1:
+        return HotelList(hotelIds: profile?['fav_hotels']?.cast<String>() ?? []);
+      case 2:
+        return const TripHome();
+      case 3:
+        return const Favorite();
+      case 4:
+        return const Profile();
+      default:
+        return Homne(email: widget.email);
+    }
   }
 
   getBottomBarItemTile(int index, icon) {

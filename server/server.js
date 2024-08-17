@@ -20,9 +20,9 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
 });
 const models = initModels(sequelize);
 
-sequelize.sync({ alter: true, logging: console.log })
+/* sequelize.sync({ alter: true, logging: console.log })
   .then(() => console.log("Synchronization successful"))
-  .catch(err => console.error("Synchronization failed:", err));
+  .catch(err => console.error("Synchronization failed:", err)); */
 
 
 dotenv.config();
@@ -52,7 +52,7 @@ app.use(cors({
 
 
 app.use(session({
-  name: 'binga.sid',
+  name: 'hotel_prive.sid',
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

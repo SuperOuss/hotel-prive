@@ -6,15 +6,47 @@ import 'package:hotel_prive/constant/constant.dart';
 import 'package:hotel_prive/pages/hotel/hotel_on_map.dart';
 import 'package:hotel_prive/pages/hotel/hotel_room.dart';
 import 'package:hotel_prive/widget/column_builder.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class HotelList extends StatefulWidget {
-  const HotelList({super.key});
+  final List<String> hotelIds;
+
+  const HotelList({super.key, required this.hotelIds});
 
   @override
   _HotelListState createState() => _HotelListState();
 }
 
 class _HotelListState extends State<HotelList> {
+  List<Map<String, dynamic>> hotelList2 = [];
+  @override
+  void initState() {
+    super.initState();
+    fetchHotelData();
+  }
+
+  Future<void> fetchHotelData() async {
+    final response = await http.post(
+      Uri.parse('http://localhost:3000/v1/get-rates'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'hotelIds': widget.hotelIds,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        hotelList2 =
+            List<Map<String, dynamic>>.from(json.decode(response.body));
+      });
+    } else {
+      throw Exception('Failed to load hotel data');
+    }
+  }
+
   final hotelList = [
     {
       'name': 'Hôtel des Comédies Paris',
