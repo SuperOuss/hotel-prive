@@ -8,12 +8,12 @@ import 'dart:async';
 class AutocompleteField extends StatefulWidget {
   final InputDecoration decoration;
   final FocusNode hotelsFocusNode;
-  final Function(List<String>) onHotelIdsChanged; // Add this line
+  final Function(List<String>) onHotelIdsChanged;
 
   AutocompleteField({
     required this.decoration,
     required this.hotelsFocusNode,
-    required this.onHotelIdsChanged, // Add this line
+    required this.onHotelIdsChanged,
   });
 
   @override
@@ -24,6 +24,7 @@ class _AutoCompleteWidgetState extends State<AutocompleteField> {
   final TextEditingController _typeAheadController = TextEditingController();
   final List<String> selectedHotels = [];
   final List<String> selectedHotelIds = [];
+  List<Map<String, String>> hotelSuggestions = [];
 
   Future<List<Map<String, String>>> _getHotelSuggestions(String query) async {
     final response = await http
@@ -32,10 +33,12 @@ class _AutoCompleteWidgetState extends State<AutocompleteField> {
     if (response.statusCode == 200) {
       final List hotels = json.decode(response.body);
       print('API Response: $hotels'); // Debug print
-      return hotels.map((hotel) => {
+      hotelSuggestions = hotels.map((hotel) => {
         'name': hotel['name'].toString(),
         'id': hotel['id'].toString()
       }).toList();
+      print('Mapped Hotels: $hotelSuggestions'); // Debug print
+      return hotelSuggestions;
     } else {
       print('Failed to load hotel names'); // Debug print
       throw Exception('Failed to load hotel names');
@@ -80,7 +83,7 @@ class _AutoCompleteWidgetState extends State<AutocompleteField> {
             setState(() {
               _typeAheadController.text = suggestion;
               selectedHotels.add(suggestion);
-              selectedHotelIds.add(getHotelId(suggestion)); // Assuming you have a method to get the hotel ID
+              selectedHotelIds.add(getHotelId(suggestion));
               _typeAheadController.clear(); // Clear the text field
               widget.onHotelIdsChanged(selectedHotelIds); // Call the callback function
               print('Selected Hotel IDs: $selectedHotelIds'); // Debug print
@@ -112,8 +115,10 @@ class _AutoCompleteWidgetState extends State<AutocompleteField> {
 
   // Method to get hotel ID from suggestion
   String getHotelId(String suggestion) {
-    // Replace this with your actual logic to get the hotel ID
-    // For now, we are just returning the hash code of the suggestion
-    return suggestion.hashCode.toString();
+    final hotel = hotelSuggestions.firstWhere(
+      (hotel) => hotel['name'] == suggestion,
+      orElse: () => {'id': 'unknown'},
+    );
+    return hotel['id']!;
   }
 }

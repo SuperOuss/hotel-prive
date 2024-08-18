@@ -1,15 +1,12 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 import 'package:hotel_prive/pages/hotel/hotel_list.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:hotel_prive/constant/constant.dart';
-import 'package:hotel_prive/pages/experience/experience.dart';
 import 'package:hotel_prive/pages/places/recommended.dart';
 import 'package:hotel_prive/pages/profile/profile.dart';
+import 'package:hotel_prive/pages/hotel/hotel_room.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 
 class Homne extends StatefulWidget {
   final String? email;
@@ -20,15 +17,14 @@ class Homne extends StatefulWidget {
   _HomneState createState() => _HomneState();
 }
 
-
-
 class _HomneState extends State<Homne> {
-  //main objects
+  // Main objects
   List<Map<String, dynamic>> popularPlacesList = [];
+  List<Map<String, dynamic>> hotelList = [];
   Map<String, dynamic>? profile;
   bool isLoading = false;
 
-//init state
+  // Init state
   @override
   void initState() {
     super.initState();
@@ -36,50 +32,6 @@ class _HomneState extends State<Homne> {
     fetchUserData();
   }
 
-  final popularExperiencesList = [
-    {
-      'name': 'Wine not taste our passion?',
-      'image': 'assets/popular_experiences/popular_experiences_1.jpg',
-      'type': 'Wine tasting',
-      'price': '35',
-      'rating': '4.9'
-    },
-    {
-      'name': 'Fine Wines & Ruin Bars',
-      'image': 'assets/popular_experiences/popular_experiences_2.jpg',
-      'type': 'Wine tasting',
-      'price': '61',
-      'rating': '5.0'
-    },
-    {
-      'name': 'Budapest Boat Cruise With a Bonus Drink',
-      'image': 'assets/popular_experiences/popular_experiences_3.jpg',
-      'type': 'Boat ride',
-      'price': '31',
-      'rating': '4.81'
-    },
-    {
-      'name': 'Budapest Historic and Cultural Tour',
-      'image': 'assets/popular_experiences/popular_experiences_4.jpg',
-      'type': 'History walk',
-      'price': '64',
-      'rating': '5.0'
-    },
-    {
-      'name': 'Private Scenic Travel Photo Shoot',
-      'image': 'assets/popular_experiences/popular_experiences_5.jpg',
-      'type': 'Photo shoot',
-      'price': '64',
-      'rating': '4.96'
-    },
-    {
-      'name': 'BudapEster - Walking \'n\' street food',
-      'image': 'assets/popular_experiences/popular_experiences_6.jpg',
-      'type': 'History walk',
-      'price': '69',
-      'rating': '4.98'
-    }
-  ];
   Future<Map<String, dynamic>> fetchDealsCount(double latitude,
       double longitude, String countryCode, String city) async {
     final response = await http.get(Uri.parse(
@@ -113,9 +65,40 @@ class _HomneState extends State<Homne> {
           print('Fetched user profile: $profile');
         });
         updatePopularPlacesList();
+        fetchUserHotelData();
       } else {
         print('Failed to load user data');
       }
+    }
+  }
+
+  Future<void> fetchUserHotelData() async {
+    if (profile != null && profile!['fav_hotels'] != null) {
+      final requestBody = jsonEncode(<String, dynamic>{
+        'hotelIds': profile!['fav_hotels'],
+      });
+
+      print('Sending request body: $requestBody'); // Debug print
+
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/v1/get-rates'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: requestBody,
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          hotelList =
+              List<Map<String, dynamic>>.from(json.decode(response.body));
+          print('Received hotel data: $hotelList'); // Debug print
+        });
+      } else {
+        throw Exception('Failed to load hotel data');
+      }
+    } else {
+      print('No hotel IDs available to send'); // Debug print
     }
   }
 
@@ -166,11 +149,11 @@ class _HomneState extends State<Homne> {
           popularPlacesList[i]['deals'] = '${result['dealCount']} deals';
           popularPlacesList[i]['loading'] = false;
           popularPlacesList[i]['hotelIds'] = result['hotelIds'];
+          print('hotelIds');
         });
       }
     }
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -253,9 +236,9 @@ class _HomneState extends State<Homne> {
           // Popular Places End
           heightSpace,
           heightSpace,
-          // Popular Experiences Start
-          popularExperiences(),
-          // Popular Experiences End
+          // Selected Hotels Start
+          selectedHotels(),
+          // Selected Hotels End
           heightSpace,
           // Recommended Start
           const Recommended(),
@@ -266,99 +249,6 @@ class _HomneState extends State<Homne> {
   }
 
   Widget popularPlaces() {
-  double width = MediaQuery.of(context).size.width;
-  return Column(
-    mainAxisAlignment: MainAxisAlignment.start,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Padding(
-        padding: EdgeInsets.only(right: fixPadding * 2.0, left: fixPadding * 2.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text('Your locations', style: blackHeadingTextStyle),
-            Text('View all', style: smallBoldGreyTextStyle),
-          ],
-        ),
-      ),
-      heightSpace,
-      heightSpace,
-      SizedBox(
-        width: width,
-        height: 150.0,
-        child: ListView.builder(
-          itemCount: popularPlacesList.length,
-          scrollDirection: Axis.horizontal,
-          physics: const BouncingScrollPhysics(),
-          itemBuilder: (context, index) {
-            final item = popularPlacesList[index];
-            return InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  PageTransition(
-                    type: PageTransitionType.fade,
-                    duration: const Duration(milliseconds: 1000),
-                    child: HotelList(
-                      hotelIds: item['hotelIds'], // Pass hotelIds here
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                width: 130.0,
-                margin: (index == popularPlacesList.length - 1)
-                    ? EdgeInsets.only(left: fixPadding, right: fixPadding * 2.0)
-                    : (index == 0)
-                        ? EdgeInsets.only(left: fixPadding * 2.0)
-                        : EdgeInsets.only(left: fixPadding),
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(item['image']!),
-                    fit: BoxFit.cover,
-                  ),
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
-                child: Container(
-                  width: 130.0,
-                  height: 150.0,
-                  padding: EdgeInsets.all(fixPadding * 1.5),
-                  alignment: Alignment.bottomLeft,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.1, 0.5, 0.9],
-                      colors: [
-                        blackColor.withOpacity(0.0),
-                        blackColor.withOpacity(0.3),
-                        blackColor.withOpacity(0.7),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item['name']!, style: whiteSmallBoldTextStyle),
-                      item['loading'] == true
-                          ? CircularProgressIndicator()
-                          : Text(item['deals']!, style: whiteExtraSmallTextStyle),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    ],
-  );
-}
-
-  popularExperiences() {
     double width = MediaQuery.of(context).size.width;
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -371,7 +261,7 @@ class _HomneState extends State<Homne> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text('Popular Experiences', style: blackHeadingTextStyle),
+              Text('Your locations', style: blackHeadingTextStyle),
               Text('View all', style: smallBoldGreyTextStyle),
             ],
           ),
@@ -380,13 +270,121 @@ class _HomneState extends State<Homne> {
         heightSpace,
         SizedBox(
           width: width,
-          height: 295.0,
+          height: 150.0,
           child: ListView.builder(
-            itemCount: popularExperiencesList.length,
+            itemCount: popularPlacesList.length,
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
-              final item = popularExperiencesList[index];
+              final item = popularPlacesList[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    PageTransition(
+                      type: PageTransitionType.fade,
+                      duration: const Duration(milliseconds: 1000),
+                      child: HotelList(
+                        hotelIds: (item['hotelIds'] as List<dynamic>?)
+                            ?.map((id) => id.toString())
+                            .toList(), // Convert hotelIds to List<String>
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 130.0,
+                  margin: (index == popularPlacesList.length - 1)
+                      ? EdgeInsets.only(
+                          left: fixPadding, right: fixPadding * 2.0)
+                      : (index == 0)
+                          ? EdgeInsets.only(left: fixPadding * 2.0)
+                          : EdgeInsets.only(left: fixPadding),
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: NetworkImage(item['image']!),
+                      fit: BoxFit.cover,
+                    ),
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  child: Container(
+                    width: 130.0,
+                    height: 150.0,
+                    padding: EdgeInsets.all(fixPadding * 1.5),
+                    alignment: Alignment.bottomLeft,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.1, 0.5, 0.9],
+                        colors: [
+                          blackColor.withOpacity(0.0),
+                          blackColor.withOpacity(0.3),
+                          blackColor.withOpacity(0.7),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item['name']!, style: whiteSmallBoldTextStyle),
+                        item['loading'] == true
+                            ? CircularProgressIndicator()
+                            : Text(item['deals']!,
+                                style: whiteExtraSmallTextStyle),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget selectedHotels() {
+    double width = MediaQuery.of(context).size.width;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(right: 16.0, left: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text('Your selected hotels',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text('View all',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey)),
+            ],
+          ),
+        ),
+        SizedBox(height: 10),
+        SizedBox(
+          width: width,
+          height: 295.0,
+          child: ListView.builder(
+            itemCount: hotelList.length,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final item = hotelList[index];
+              final discount = item[
+                  'percentageDifference']; // Assuming discount is a field in the item
+              double discountValue = 0;
+              if (discount != null && discount is String) {
+                discountValue =
+                    double.tryParse(discount.replaceAll('%', '')) ?? 0;
+              }
               return InkWell(
                 onTap: () {
                   Navigator.push(
@@ -394,36 +392,57 @@ class _HomneState extends State<Homne> {
                       PageTransition(
                           type: PageTransitionType.fade,
                           duration: const Duration(milliseconds: 1000),
-                          child: Experience(
-                            title: item['name'],
-                          )));
+                           child: HotelRoom(
+                                    hotelData: item,
+                                    email: widget.email,
+                                  )));
                 },
                 child: Container(
                   width: 130.0,
-                  margin: (index == popularExperiencesList.length - 1)
-                      ? EdgeInsets.only(
-                          left: fixPadding, right: fixPadding * 2.0)
+                  margin: (index == hotelList.length - 1)
+                      ? EdgeInsets.only(left: 8.0, right: 16.0)
                       : (index == 0)
-                          ? EdgeInsets.only(left: fixPadding * 2.0)
-                          : EdgeInsets.only(left: fixPadding),
+                          ? EdgeInsets.only(left: 16.0)
+                          : EdgeInsets.only(left: 8.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 130.0,
-                        height: 150.0,
-                        padding: EdgeInsets.all(fixPadding * 1.5),
-                        alignment: Alignment.bottomLeft,
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(item['image']!),
-                            fit: BoxFit.cover,
+                      Stack(
+                        children: [
+                          Container(
+                            width: 130.0,
+                            height: 150.0,
+                            padding: EdgeInsets.all(12.0),
+                            alignment: Alignment.bottomLeft,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: NetworkImage(item['defaultImageUrl']),
+                                fit: BoxFit.cover,
+                              ),
+                              borderRadius: BorderRadius.circular(15.0),
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(15.0),
-                        ),
+                          if (discountValue > 0)
+                            Positioned(
+                              top: 8.0,
+                              left: 8.0,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8.0, vertical: 4.0),
+                                color: Colors.red,
+                                child: Text(
+                                  '-${discountValue.toStringAsFixed(0)}% off',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      heightSpace,
+                      SizedBox(height: 10),
                       SizedBox(
                         width: 130.0,
                         child: Column(
@@ -437,25 +456,29 @@ class _HomneState extends State<Homne> {
                                 Icon(Icons.star,
                                     color: Colors.lime[600], size: 16.0),
                                 const SizedBox(width: 5.0),
-                                Text(item['rating']!,
-                                    style: blackSmallTextStyle),
+                                Text(item['stars'].toString(),
+                                    style: TextStyle(
+                                        fontSize: 12, color: Colors.black)),
                               ],
                             ),
                             const SizedBox(height: 5.0),
                             Text(
-                              item['name']!,
-                              style: blackBigTextStyle,
+                              item['hotelName'],
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
                               maxLines: 2,
                             ),
                             const SizedBox(height: 5.0),
                             Text(
-                              item['type']!,
-                              style: greyNormalTextStyle,
+                              item['location'],
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
                             ),
                             const SizedBox(height: 5.0),
                             Text(
-                              'From \$${item['price']}/person',
-                              style: blackSmallTextStyle,
+                              'From \$${item['suggestedSellingPrice']}/person',
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.black),
                             ),
                           ],
                         ),

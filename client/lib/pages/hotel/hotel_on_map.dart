@@ -44,6 +44,11 @@ class _HotelOnMapState extends State<HotelOnMap> {
       moveCamera();
     }
   }
+  final Map<String, dynamic> placeholderHotelData = {
+  'name': 'Default Hotel',
+  'defaultImageUrl': 'https://example.com/default-image.jpg',
+  'offerRetailRate': 'N/A',
+};
 
   _hotelFinalList(index) {
     return AnimatedBuilder(
@@ -70,9 +75,7 @@ class _HotelOnMapState extends State<HotelOnMap> {
                   duration: const Duration(milliseconds: 700),
                   type: PageTransitionType.fade,
                   child: HotelRoom(
-                    title: widget.hotelList[index]['name'],
-                    imgPath: widget.hotelList[index]['image'],
-                    price: widget.hotelList[index]['price'],
+             hotelData: placeholderHotelData
                   )));
         },
         child: Stack(

@@ -94,7 +94,7 @@ class _BottomBarState extends State<BottomBar> {
       case 0:
         return Homne(email: widget.email);
       case 1:
-        return HotelList(hotelIds: profile?['fav_hotels']?.cast<String>() ?? []);
+        return HotelList(email: widget.email);
       case 2:
         return const TripHome();
       case 3:

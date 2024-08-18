@@ -1,5 +1,3 @@
-// ignore_for_file: library_private_types_in_public_api
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:page_transition/page_transition.dart';
@@ -9,15 +7,16 @@ import 'package:hotel_prive/pages/related_place/related_place.dart';
 import 'package:hotel_prive/pages/review/review.dart';
 import 'package:hotel_prive/widget/carousel_pro/lib/carousel_pro.dart';
 import 'package:hotel_prive/widget/column_builder.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_html/flutter_html.dart' as html;
 
 class HotelRoom extends StatefulWidget {
-  final String? title, imgPath, price;
-  const HotelRoom(
-      {Key? key,
-      @required this.title,
-      @required this.imgPath,
-      @required this.price})
-      : super(key: key);
+  final Map<String, dynamic>? hotelData;
+  final String? email;
+
+  const HotelRoom({super.key, this.hotelData, this.email});
+
   @override
   _HotelRoomState createState() => _HotelRoomState();
 }
@@ -25,197 +24,239 @@ class HotelRoom extends StatefulWidget {
 class _HotelRoomState extends State<HotelRoom> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool favorite = false;
-  Set<Marker>? markers;
-
-  final ratingList = [
-    {
-      'name': 'Ersel',
-      'image': 'assets/user/user_1.jpg',
-      'rating': 5,
-      'review': 'Everthing was ok and the location is nice.',
-      'time': 'August 2020'
-    },
-    {
-      'name': 'Jane',
-      'image': 'assets/user/user_2.jpg',
-      'rating': 5,
-      'review': 'Great spot!',
-      'time': 'August 2020'
-    },
-    {
-      'name': 'Apollonia',
-      'image': 'assets/user/user_3.jpg',
-      'rating': 5,
-      'review': 'Awesome place.',
-      'time': 'July 2020'
-    },
-    {
-      'name': 'Beatriz',
-      'image': 'assets/user/user_4.jpg',
-      'rating': 5,
-      'review': 'Really nice!',
-      'time': 'June 2020'
-    },
-    {
-      'name': 'Linnea',
-      'image': 'assets/user/user_5.jpg',
-      'rating': 5,
-      'review': 'Fabulous place.',
-      'time': 'May 2020'
-    },
-    {
-      'name': 'Ronan',
-      'image': 'assets/user/user_6.jpg',
-      'rating': 5,
-      'review': 'Fantastic.',
-      'time': 'April 2020'
-    },
-    {
-      'name': 'Brayden',
-      'image': 'assets/user/user_7.jpg',
-      'rating': 5,
-      'review': 'Must visit.',
-      'time': 'Fabruary 2020'
-    },
-    {
-      'name': 'Hugo',
-      'image': 'assets/user/user_8.jpg',
-      'rating': 5,
-      'review': 'It\'s clean and nice.',
-      'time': 'January 2020'
-    }
-  ];
+  Set<Marker> markers = {};
+  List<dynamic> reviews = [];
+  Map<String, dynamic>? fullHotelData;
+  String sentiment = '';
+  List<Widget> roomWidgets = [];
+  List rooms = [];
 
   @override
   void initState() {
     super.initState();
-    // ignore: prefer_collection_literals
-    markers = Set.from([]);
+    //markers = Set.from([]);
+    print(widget.hotelData);
+    final hotelId = widget.hotelData?['hotelId'];
+    if (hotelId != null) {
+      _fetchAndSetHotelData(hotelId);
+      fetchReviews(hotelId).then((fetchedReviews) {
+        setState(() {
+          reviews = fetchedReviews;
+        });
+      });
+    }
+  }
+
+  Future<void> _fetchAndSetHotelData(String hotelId) async {
+    final fetchedHotelData = await fetchHotelData(hotelId);
+    setState(() {
+      fullHotelData = {
+        ...fetchedHotelData,
+        'offerRetailRate': widget.hotelData?['offerRetailRate'],
+        'suggestedSellingPrice': widget.hotelData?['suggestedSellingPrice'],
+        'percentageDifference': widget.hotelData?['percentageDifference']
+      };
+      rooms = fullHotelData?['rooms'] ?? [];
+    });
+  }
+
+  Future<List<dynamic>> fetchReviews(String hotelId) async {
+    print(hotelId);
+    final String url = 'http://localhost:3000/v1/reviews?hotelId=$hotelId';
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        final String fetchedSentiment = responseData['sentimentAnalysis'] ?? '';
+        print(fetchedSentiment);
+
+        setState(() {
+          sentiment = fetchedSentiment;
+          reviews = responseData['reviews'] ?? [];
+        });
+
+        return reviews;
+      } else {
+        throw Exception('Failed to load reviews');
+      }
+    } catch (e) {
+      print('Error fetching reviews: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchHotelData(String hotelId) async {
+    final String url =
+        'http://localhost:3000/v1/get-hotel-details?hotelId=$hotelId';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> hotelData = json.decode(response.body);
+        print('Hotel Name: ${hotelData['name']}');
+        return hotelData;
+      } else {
+        throw Exception('Failed to load hotel data');
+      }
+    } catch (e) {
+      print('Error fetching hotel data: $e');
+      return {};
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    final hotelData = widget.hotelData!;
     return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: whiteColor,
-      appBar: AppBar(
+        key: _scaffoldKey,
         backgroundColor: whiteColor,
-        elevation: 0.0,
-        titleSpacing: 0.0,
-        title: Text(widget.title!, style: appBarTextStyle),
-        actions: [
-          IconButton(
-            icon: Icon((favorite) ? Icons.favorite : Icons.favorite_border),
-            onPressed: () {
-              setState(() {
-                favorite = !favorite;
-              });
-              if (favorite) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Added to Favorite'),
+        appBar: AppBar(
+          backgroundColor: whiteColor,
+          elevation: 0.0,
+          titleSpacing: 0.0,
+          title: fullHotelData != null
+              ? Text(fullHotelData!['name'], style: appBarTextStyle)
+              : Text('Loading...', style: appBarTextStyle),
+          actions: [
+            IconButton(
+              icon: Icon((favorite) ? Icons.favorite : Icons.favorite_border),
+              onPressed: () {
+                setState(() {
+                  favorite = !favorite;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(
+                      favorite ? 'Added to Favorite' : 'Removed from Favorite'),
                 ));
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Remove from Favorite'),
-                ));
-              }
-            },
-          )
-        ],
-      ),
-      bottomNavigationBar: Material(
-        elevation: 5.0,
-        child: Container(
-          color: Colors.white,
-          width: width,
-          height: 70.0,
-          padding: EdgeInsets.symmetric(horizontal: fixPadding * 2.0),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'From \$${widget.price}',
-                    style: blackBigBoldTextStyle,
-                  ),
-                  Text(
-                    ' / night',
-                    style: blackSmallTextStyle,
-                  ),
-                ],
-              ),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      PageTransition(
-                          type: PageTransitionType.rightToLeft,
-                          child: SelectHotelDate(
-                            price: widget.price!,
-                          )));
-                },
-                child: Container(
-                  padding: EdgeInsets.only(
-                      top: fixPadding,
-                      bottom: fixPadding,
-                      right: fixPadding * 2.0,
-                      left: fixPadding * 2.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15.0),
-                    color: primaryColor,
-                  ),
-                  child: Text(
-                    'Book now',
-                    style: whiteColorButtonTextStyle,
+              },
+            )
+          ],
+        ),
+        bottomNavigationBar: Material(
+          elevation: 5.0,
+          child: Container(
+            color: Colors.white,
+            width: width,
+            height: 70.0,
+            padding: EdgeInsets.symmetric(horizontal: fixPadding * 2.0),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '\$${hotelData['offerRetailRate']}',
+                      style: blackBigBoldTextStyle,
+                    ),
+                    SizedBox(width: 8.0),
+                    Text(
+                      '\$${hotelData['suggestedSellingPrice']}',
+                      style: smallBoldGreyTextStyle.copyWith(
+                        decoration: TextDecoration.lineThrough,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    if (hotelData['percentageDifference'] != null)
+                      Container(
+                        margin: EdgeInsets.only(left: 8.0),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.0, vertical: 4.0),
+                        color: Colors.red,
+                        child: Text(
+                          '-${hotelData['percentageDifference']}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        PageTransition(
+                            type: PageTransitionType.rightToLeft,
+                            child: SelectHotelDate(
+                             hotelData: fullHotelData!,
+                            )));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.only(
+                        top: fixPadding,
+                        bottom: fixPadding,
+                        right: fixPadding * 2.0,
+                        left: fixPadding * 2.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15.0),
+                      color: primaryColor,
+                    ),
+                    child: Text(
+                      'Book now',
+                      style: whiteColorButtonTextStyle,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      body: ListView(
-        children: [
-          Hero(
-            tag: widget.title!,
-            child: slider(),
-          ),
-
-          // Title Rating Start
-          titleRating(),
-          // Title Rating End
-          divider(),
-          // Facility Start
-          facility(),
-          // Facility End
-          divider(),
-          // About this place start
-          aboutThisPlace(),
-          // About this place end
-          divider(),
-          // Sleeping Arrangement Start
-          sleepingArrangement(),
-          // Sleeping Arrangement End
-          divider(),
-          // Location Start
-          location(),
-          // Location End
-          divider(),
-          // Review Start
-          review(),
-          // Review End
-          // Related Places Start
-          const RelatedPlaces(),
-          // Related Places End
-        ],
-      ),
-    );
+        body: ListView(
+          children: [
+            Hero(
+              tag: 'hotelHeroMain',
+              child: fullHotelData != null &&
+                      fullHotelData?['hotelImages'] != null
+                  ? slider(
+                      List<Map<String, dynamic>>.from(
+                              fullHotelData!['hotelImages'])
+                          .take(10)
+                          .toList(),
+                    )
+                  : Container(), // Placeholder widget if fullHotelData or hotelImages is null
+            ),
+            titleRating(hotelData['hotelName'], hotelData['stars'],
+                hotelData['location']),
+            divider(),
+            // Sentiment Analysis Text Block
+            if (sentiment.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Reviews Sentiment Analysis',
+                      style: blackBigTextStyle,
+                    ),
+                    SizedBox(height: 8.0),
+                    Text(
+                      sentiment,
+                      style: greySmallTextStyle,
+                    ),
+                  ],
+                ),
+              ),
+            facility(),
+            divider(),
+            aboutThisPlace(),
+            divider(),
+            location(),
+            divider(),
+            review(),
+            const RelatedPlaces(),
+          ],
+        ));
   }
 
   divider() {
@@ -228,18 +269,35 @@ class _HotelRoomState extends State<HotelRoom> {
     );
   }
 
-  slider() {
+  slider(List<Map<String, dynamic>> hotelImages) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+
+    // Sort the images to ensure the default image is first
+    hotelImages.sort((a, b) {
+      if (a['defaultImage'] == true) return -1;
+      if (b['defaultImage'] == true) return 1;
+      return 0;
+    });
+
+    // Extract the URLs and wrap them with Image widget
+    List<Widget> imageWidgets = hotelImages.map((image) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8.0), // Optional: Add border radius
+        child: Image.network(
+          image['url'],
+          fit: BoxFit.cover,
+          width: width,
+          height: height / 2.3,
+        ),
+      );
+    }).toList();
+
     return SizedBox(
       height: height / 2.3,
       width: width,
       child: Carousel(
-        images: [
-          ExactAssetImage(widget.imgPath!),
-          ExactAssetImage(widget.imgPath!),
-          ExactAssetImage(widget.imgPath!),
-        ],
+        images: imageWidgets,
         dotSize: 6.0,
         dotSpacing: 18.0,
         dotColor: primaryColor,
@@ -251,11 +309,16 @@ class _HotelRoomState extends State<HotelRoom> {
         overlayShadow: false,
         overlayShadowColors: Colors.white,
         overlayShadowSize: 0.7,
+        boxFit: BoxFit.cover, // Ensure images fit correctly
+        autoplay: false, // Enable autoplay
+        //autoplayDuration: Duration(seconds: 3), // Duration between transitions
       ),
     );
   }
 
-  titleRating() {
+  titleRating(String hotelName, dynamic stars, String location) {
+    // Ensure stars is a string
+    String starsStr = stars.toString();
     return Container(
       padding: EdgeInsets.all(fixPadding * 2.0),
       child: Column(
@@ -263,7 +326,7 @@ class _HotelRoomState extends State<HotelRoom> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.title!,
+            hotelName,
             style: blackHeadingTextStyle,
           ),
           heightSpace,
@@ -274,17 +337,17 @@ class _HotelRoomState extends State<HotelRoom> {
               Icon(Icons.star, color: Colors.lime[600], size: 18.0),
               const SizedBox(width: 5.0),
               Text(
-                '5.0',
+                starsStr,
                 style: blackSmallTextStyle,
               ),
               const SizedBox(width: 3.0),
               Text(
-                '(12)',
+                '',
                 style: greySmallTextStyle,
               ),
               widthSpace,
               Text(
-                'Budapest, Hungary',
+                location,
                 style: primaryColorSmallTextStyle,
               ),
             ],
@@ -320,8 +383,6 @@ class _HotelRoomState extends State<HotelRoom> {
               facilityTile('assets/icons/lift.png', 'Lift'),
               horizontalSpace(),
               facilityTile('assets/icons/wifi.png', 'Wifi'),
-              horizontalSpace(),
-              facilityTile('assets/icons/kitchen.png', 'Kitchen'),
               horizontalSpace(),
               facilityTile('assets/icons/ac.png', 'Air conditioning'),
               horizontalSpace(),
@@ -386,98 +447,14 @@ class _HotelRoomState extends State<HotelRoom> {
             style: blackBigTextStyle,
           ),
           heightSpace,
-          Text(
-            'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.',
-            style: greySmallTextStyle,
-            textAlign: TextAlign.justify,
-          ),
-        ],
-      ),
-    );
-  }
-
-  sleepingArrangement() {
-    double width = MediaQuery.of(context).size.width;
-    return Container(
-      padding: EdgeInsets.all(fixPadding * 2.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Sleeping arrangements', style: blackBigTextStyle),
-          heightSpace,
-          heightSpace,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(fixPadding * 2.0),
-                width: (width - (fixPadding * 6.0 + 2.8)) / 2,
-                decoration: BoxDecoration(
-                  color: whiteColor,
-                  borderRadius: BorderRadius.circular(15.0),
-                  border: Border.all(width: 0.7, color: primaryColor),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      blurRadius: 1.0,
-                      spreadRadius: 1.0,
-                      color: Colors.grey[300]!,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Image.asset('assets/icons/bed.png',
-                        width: 35.0, height: 35.0),
-                    heightSpace,
-                    Text(
-                      'Bedroom 1',
-                      style: blackSmallBoldTextStyle,
-                    ),
-                    Text(
-                      '1 queen bed',
-                      style: greySmallTextStyle,
-                    ),
-                  ],
-                ),
+          html.Html(
+            data: fullHotelData?['hotelDescription'] ?? '',
+            style: {
+              "body": html.Style(
+                fontSize: html.FontSize(14.0),
+                color: Colors.grey,
               ),
-              Container(
-                padding: EdgeInsets.all(fixPadding * 2.0),
-                width: (width - (fixPadding * 6.0 + 2.8)) / 2,
-                decoration: BoxDecoration(
-                  color: whiteColor,
-                  borderRadius: BorderRadius.circular(15.0),
-                  border: Border.all(width: 0.7, color: primaryColor),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      blurRadius: 1.0,
-                      spreadRadius: 1.0,
-                      color: Colors.grey[300]!,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Image.asset('assets/icons/bed.png',
-                        width: 35.0, height: 35.0),
-                    heightSpace,
-                    Text(
-                      'Bedroom 2',
-                      style: blackSmallBoldTextStyle,
-                    ),
-                    Text(
-                      '1 king bed',
-                      style: greySmallTextStyle,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            },
           ),
         ],
       ),
@@ -486,6 +463,10 @@ class _HotelRoomState extends State<HotelRoom> {
 
   location() {
     double width = MediaQuery.of(context).size.width;
+    double latitude = fullHotelData?['location']['latitude'] ?? 47.4517861;
+    double longitude = fullHotelData?['location']['longitude'] ?? 18.973275;
+    print('Latitude: $latitude, Longitude: $longitude');
+
     return Container(
       padding: EdgeInsets.all(fixPadding * 2.0),
       child: Column(
@@ -512,17 +493,24 @@ class _HotelRoomState extends State<HotelRoom> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(15.0),
               child: GoogleMap(
-                markers: markers!,
+                markers: markers,
                 onMapCreated: (GoogleMapController controller) {
-                  Marker m = const Marker(
-                      markerId: MarkerId('1'),
-                      position: LatLng(47.4517861, 18.973275));
+                  print('Map created');
+                  Marker m = Marker(
+                    markerId: MarkerId('1'),
+                    position: LatLng(latitude, longitude),
+                  );
                   setState(() {
-                    markers!.add(m);
+                    markers.add(m);
                   });
                 },
-                initialCameraPosition: const CameraPosition(
-                    target: LatLng(47.4517861, 18.973275), zoom: 8),
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(latitude, longitude),
+                  zoom: 8,
+                ),
+                onCameraMove: (CameraPosition position) {
+                  print('Camera position: ${position.target}');
+                },
               ),
             ),
           ),
@@ -533,6 +521,7 @@ class _HotelRoomState extends State<HotelRoom> {
 
   review() {
     double width = MediaQuery.of(context).size.width;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,12 +534,12 @@ class _HotelRoomState extends State<HotelRoom> {
           ),
         ),
         ColumnBuilder(
-          itemCount: 3,
+          itemCount: reviews.length > 10 ? 10 : reviews.length,
           mainAxisAlignment: MainAxisAlignment.start,
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           itemBuilder: (context, index) {
-            final item = ratingList[index];
+            final item = reviews[index];
             return Container(
               margin: (index == 0)
                   ? EdgeInsets.symmetric(horizontal: fixPadding * 2.0)
@@ -559,6 +548,8 @@ class _HotelRoomState extends State<HotelRoom> {
                       right: fixPadding * 2.0,
                       left: fixPadding * 2.0),
               padding: EdgeInsets.all(fixPadding * 2.0),
+              width: width -
+                  fixPadding * 4.0, // Set a fixed width for the review boxes
               decoration: BoxDecoration(
                 color: whiteColor,
                 borderRadius: BorderRadius.circular(15.0),
@@ -574,47 +565,28 @@ class _HotelRoomState extends State<HotelRoom> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 70.0,
-                        height: 70.0,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(35.0),
-                          image: DecorationImage(
-                            image: AssetImage('${item['image']}'),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      widthSpace,
-                      SizedBox(
-                        width: width - (fixPadding * 8.0 + 10.0 + 70.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${item['name']}',
-                              style: blackSmallBoldTextStyle,
-                            ),
-                            const SizedBox(height: 5.0),
-                            Text(
-                              '${item['time']}',
-                              style: greySmallTextStyle,
-                            ),
-                            const SizedBox(height: 5.0),
-                            ratingBar(item['rating']),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                  heightSpace,
                   Text(
-                    '${item['review']}',
+                    '${item['name']}',
+                    style: blackSmallBoldTextStyle,
+                  ),
+                  const SizedBox(height: 5.0),
+                  Text(
+                    '${item['date']}',
+                    style: greySmallTextStyle,
+                  ),
+                  const SizedBox(height: 5.0),
+                  Text(
+                    'Rating: ${item['averageScore']}',
+                    style: blackNormalTextStyle,
+                  ),
+                  const SizedBox(height: 5.0),
+                  Text(
+                    'Pros: ${item['pros']}',
+                    style: blackNormalTextStyle,
+                  ),
+                  const SizedBox(height: 5.0),
+                  Text(
+                    'Cons: ${item['cons']}',
                     style: blackNormalTextStyle,
                   ),
                 ],
@@ -633,7 +605,7 @@ class _HotelRoomState extends State<HotelRoom> {
                       duration: const Duration(milliseconds: 600),
                       type: PageTransitionType.rightToLeftWithFade,
                       child: Review(
-                        reviewList: ratingList,
+                        reviewList: reviews,
                       )));
             },
             child: Container(

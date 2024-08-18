@@ -433,17 +433,20 @@ class DotsIndicator extends AnimatedWidget {
     );
     double zoom = 1.0 + (dotIncreaseSize! - 1.0) * selectedness;
     final dotColor = zoom > 1.0 ? increasedColor : color;
-    return SizedBox(
-      width: dotSpacing,
-      child: Center(
-        child: Material(
-          color: dotColor,
-          type: MaterialType.circle,
-          child: SizedBox(
-            width: dotSize! * zoom,
-            height: dotSize! * zoom,
-            child: InkWell(
-              onTap: () => onPageSelected!(index),
+
+    return Flexible(
+      child: SizedBox(
+        width: dotSpacing,
+        child: Center(
+          child: Material(
+            color: dotColor,
+            type: MaterialType.circle,
+            child: SizedBox(
+              width: dotSize! * zoom,
+              height: dotSize! * zoom,
+              child: InkWell(
+                onTap: () => onPageSelected!(index),
+              ),
             ),
           ),
         ),

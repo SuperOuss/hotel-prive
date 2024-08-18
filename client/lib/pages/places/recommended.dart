@@ -58,6 +58,11 @@ class _RecommendedState extends State<Recommended> {
       'rating': 5
     }
   ];
+  final Map<String, dynamic> placeholderHotelData = {
+  'name': 'Default Hotel',
+  'defaultImageUrl': 'https://example.com/default-image.jpg',
+  'offerRetailRate': 'N/A',
+};
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
@@ -85,9 +90,7 @@ class _RecommendedState extends State<Recommended> {
                           duration: const Duration(milliseconds: 700),
                           type: PageTransitionType.fade,
                           child: HotelRoom(
-                            title: '${item['name']}',
-                            imgPath: '${item['image']}',
-                            price: '${item['price']}',
+                            hotelData: placeholderHotelData,
                           )));
                 },
                 child: Container(
