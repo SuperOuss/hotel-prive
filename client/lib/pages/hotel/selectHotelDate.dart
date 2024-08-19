@@ -1,11 +1,10 @@
 // ignore_for_file: file_names, library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:hotel_prive/constant/constant.dart';
 import 'package:hotel_prive/pages/payment/payment.dart';
 import 'package:hotel_prive/widget/column_builder.dart';
+import 'package:hotel_prive/widget/carousel_pro/lib/carousel_pro.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -21,6 +20,10 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
   final now = DateTime.now();
   DateTime selectedStartDate = DateTime.now().add(Duration(days: 30));
   DateTime selectedEndDate = DateTime.now().add(Duration(days: 31));
+  List rates = [];
+  bool isLoading = true;
+  String selectedOfferId = '';
+  int offerRetailRate = 0;
 
   final ruleList = [];
   void printHotelDataKeys(Map<String, dynamic> hotelData) {
@@ -45,7 +48,21 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
         .add(Duration(days: 1)); // Ensure end date is after start date
 
     // Call getRates with the initialized dates and hotel ID
-    getRates(selectedStartDate, selectedEndDate, widget.hotelData['id']);
+    fetchRates();
+    print('email: ${widget.email}');
+  }
+
+  Future<void> fetchRates() async {
+    setState(() {
+      isLoading = true;
+    });
+    // Simulate a network call
+    await Future.delayed(Duration(seconds: 2));
+
+    await getRates(selectedStartDate, selectedEndDate, widget.hotelData['id']);
+    setState(() {
+      isLoading = false;
+    });
   }
 
   Future<void> _selectStartDate(BuildContext context) async {
@@ -63,6 +80,23 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
           selectedEndDate = selectedStartDate.add(Duration(days: 1));
         }
       });
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedEndDate.isAfter(selectedStartDate)
+          ? selectedEndDate
+          : selectedStartDate.add(Duration(days: 1)),
+      firstDate: selectedStartDate
+          .add(Duration(days: 1)), // Ensure end date is after start date
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedEndDate) {
+      setState(() {
+        selectedEndDate = picked;
+      });
       await getRates(
           selectedStartDate, selectedEndDate, widget.hotelData['id']);
     }
@@ -71,6 +105,11 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
   Future<void> getRates(
       DateTime firstDate, DateTime lastDate, String hotelId) async {
     final url = Uri.parse('http://localhost:3000/v1/get-rate');
+
+    // Print the arguments
+    print('First Date: ${firstDate.toIso8601String()}');
+    print('Last Date: ${lastDate.toIso8601String()}');
+    print('Hotel ID: $hotelId');
 
     final response = await http.post(
       url,
@@ -86,32 +125,16 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
 
     if (response.statusCode == 200) {
       // Handle successful response
-      final rates = jsonDecode(response.body);
-      print('Rates: $rates');
+      final ratesData = jsonDecode(response.body);
+      setState(() {
+        rates = ratesData; // Update the rates state variable
+      });
+      //print('Rates: $rates');
+      print('First rate object: ${rates[0]['offerRetailRate']['amount']}');
       // Populate room containers with rates
     } else {
       // Handle error response
       print('Failed to get rates: ${response.statusCode}');
-    }
-  }
-
-  List<Map<String, String>> roomRates = [
-    {'room': 'Standard Room', 'rate': '\$100'},
-    {'room': 'Deluxe Room', 'rate': '\$150'},
-    {'room': 'Suite', 'rate': '\$200'},
-  ];
-  Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedEndDate,
-      firstDate: selectedStartDate
-          .add(Duration(days: 1)), // Ensure end date is after start date
-      lastDate: DateTime(2101),
-    );
-    if (picked != null && picked != selectedEndDate) {
-      setState(() {
-        selectedEndDate = picked;
-      });
     }
   }
 
@@ -139,10 +162,17 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
             borderRadius: BorderRadius.circular(15.0),
             onTap: () {
               Navigator.push(
-                  context,
-                  PageTransition(
-                      type: PageTransitionType.rightToLeft,
-                      child: const Payment()));
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Payment(
+                    selectedOfferId: selectedOfferId,
+                    email: widget
+                        .email, // Replace userEmail with the actual email variable
+                    offerRetailRate:
+                        offerRetailRate, // Replace offerRetailRate with the actual offer retail rate variable
+                  ),
+                ),
+              );
             },
             child: Container(
               width: double.infinity,
@@ -160,68 +190,214 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
           ),
         ),
       ),
-      body: ListView(
-        children: [
-          // Select Date Card Start
-          selectDateCard(),
-          // Select Date Card End
-          rates(),
-          SizedBox(height: fixPadding * 2.0),
-          additionalRules(),
-          // Rules Start
-          rules(),
-          // Rules End
-          // Additional Rules Start
-
-          // Additional Rules End
-          //rates start
-        ],
-      ),
+      body: isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(
+                      height:
+                          16.0), // Add some space between the indicator and the text
+                  Text('Please wait while we confirm your deals with the hotel'),
+                ],
+              ),
+            )
+          : ListView(
+              children: [
+                // Select Date Card Start
+                selectDateCard(rates),
+                // Select Date Card End
+                ratesDisplay(rates, widget.hotelData),
+                SizedBox(height: fixPadding * 2.0),
+                additionalRules(widget.hotelData),
+                // Rules Start
+                rules(),
+              ],
+            ),
     );
   }
 
-  Widget rates() {
+  Widget ratesDisplay(List rates, Map hotelData) {
     double width = MediaQuery.of(context).size.width;
+    double fixPadding = 10.0;
+    Color whiteColor = Colors.white;
+
+    List<Map<String, dynamic>> ratesWithMappedRoomId = [];
+    List<Map<String, dynamic>> ratesWithoutMappedRoomId = [];
+
+    for (var rate in rates) {
+      if (rate.containsKey('mappedRoomId')) {
+        ratesWithMappedRoomId.add(rate);
+      } else {
+        ratesWithoutMappedRoomId.add(rate);
+      }
+    }
+
+    List<Map<String, dynamic>> selectedRates = [];
+    selectedRates.addAll(ratesWithMappedRoomId.take(3));
+
+    if (selectedRates.length < 3) {
+      selectedRates
+          .addAll(ratesWithoutMappedRoomId.take(3 - selectedRates.length));
+    }
+
     return Column(
-      children: roomRates.map((roomRate) {
-        return Container(
-          width: width -
-              (fixPadding * 4.0), // Adjust width to be similar to others
-          margin: EdgeInsets.symmetric(
-              horizontal: fixPadding * 2.0, vertical: fixPadding),
-          padding: EdgeInsets.all(fixPadding * 2.0),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.0),
-            color: whiteColor,
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                blurRadius: 1.0,
-                spreadRadius: 1.0,
-                color: Colors.grey[300]!,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                roomRate['room'] ?? 'Unknown Room',
-                style: blackBigBoldTextStyle,
-              ),
-              heightSpace,
-              Text(
-                roomRate['rate'] ?? 'Unknown Rate',
-                style: blackSmallTextStyle,
-              ),
-            ],
+      children: selectedRates.map((roomRate) {
+        int suggestedSellingPrice = roomRate['suggestedSellingPrice']['amount'];
+        offerRetailRate = roomRate['offerRetailRate']['amount'];
+        double percentageDifference =
+            ((suggestedSellingPrice - offerRetailRate) / offerRetailRate) * 100;
+        String refundPolicy =
+            roomRate['cancellationPolicy']['refundableTag'] == 'NRFN'
+                ? 'Not Refundable'
+                : 'Refundable';
+
+        List<String> imageUrls = [];
+
+        if (roomRate.containsKey('mappedRoomId')) {
+          int mappedRoomId = roomRate['mappedRoomId'];
+          var matchedRoom = hotelData['rooms'].firstWhere(
+            (room) => room['id'] == mappedRoomId,
+            orElse: () => null,
+          );
+
+          if (matchedRoom != null && matchedRoom.containsKey('photos')) {
+            var photos = matchedRoom['photos'];
+
+            if (photos is List) {
+              for (var photo in photos) {
+                if (photo is Map && photo.containsKey('url')) {
+                  imageUrls.add(photo['url']);
+                }
+              }
+            } else if (photos is Map && photos.containsKey('url')) {
+              var images = photos['url'];
+              if (images is String) {
+                imageUrls.add(images);
+              }
+            }
+          }
+        }
+
+        List<Widget> imageWidgets = imageUrls.map((url) {
+          return Image.network(url, fit: BoxFit.cover);
+        }).toList();
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedOfferId = roomRate['offerId'];
+            });
+            print('Selected Offer ID: $selectedOfferId');
+          },
+          child: Container(
+            width: width - (fixPadding * 4.0),
+            margin: EdgeInsets.symmetric(
+                horizontal: fixPadding * 2.0, vertical: fixPadding),
+            padding: EdgeInsets.all(fixPadding * 2.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15.0),
+              color: selectedOfferId == roomRate['offerId']
+                  ? primaryColor
+                  : whiteColor,
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 6.0,
+                  spreadRadius: 1.0,
+                  color: Colors.grey.withOpacity(0.3),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (imageWidgets.isNotEmpty)
+                  SizedBox(
+                    height: 200.0,
+                    child: Carousel(
+                      images: imageWidgets,
+                      dotSize: 6.0,
+                      dotSpacing: 18.0,
+                      dotColor: Colors.blue,
+                      indicatorBgPadding: 10.0,
+                      dotBgColor: Colors.transparent,
+                      borderRadius: false,
+                      moveIndicatorFromBottom: 180.0,
+                      noRadiusForIndicator: true,
+                      overlayShadow: false,
+                      overlayShadowColors: Colors.white,
+                      overlayShadowSize: 0.7,
+                      boxFit: BoxFit.cover,
+                      autoplay: false,
+                    ),
+                  ),
+                SizedBox(height: 10),
+                Text(
+                  roomRate['name'] ?? 'Unknown Room',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text(
+                      '$refundPolicy',
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      '${roomRate['boardName'] ?? 'Unknown Board'}',
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      '\$${suggestedSellingPrice.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.red,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '\$${offerRetailRate.toStringAsFixed(0)} Deal Price',
+                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    ),
+                    Spacer(),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '-${percentageDifference.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),
     );
   }
 
-  selectDateCard() {
+  Widget selectDateCard(List rates) {
     double width = MediaQuery.of(context).size.width;
     return Container(
       margin: EdgeInsets.all(fixPadding * 2.0),
@@ -242,14 +418,15 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'Select your dates',
-                  style: blackBigBoldTextStyle,
-                ),
-              ]),
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Select your dates',
+                style: blackBigBoldTextStyle,
+              ),
+            ],
+          ),
           heightSpace,
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -350,52 +527,61 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
           heightSpace,
           heightSpace,
           Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'From \$${widget.hotelData['offerRetailRate']}',
-                      style: blackBigBoldTextStyle,
-                    ),
-                    Text(
-                      ' / night',
-                      style: blackSmallTextStyle,
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '\$${widget.hotelData['suggestedSellingPrice']}',
-                      style: TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    SizedBox(width: 5),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '-${widget.hotelData['percentageDifference']}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  isLoading
+                      ? Text(
+                          'Loading...',
+                          style: blackBigBoldTextStyle,
+                        )
+                      : Text(
+                          rates.isNotEmpty
+                              ? 'From \$${rates[0]['offerRetailRate']['amount']}'
+                              : 'No rates available',
+                          style: blackBigBoldTextStyle,
                         ),
+                  Text(
+                    ' / night',
+                    style: blackSmallTextStyle,
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '\$${rates[0]['suggestedSellingPrice']['amount']}',
+                    style: TextStyle(
+                      decoration: TextDecoration.lineThrough,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '-${rates[0]['percentageDifference']}%',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ],
-                ),
-              ]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          heightSpace,
         ],
       ),
     );
@@ -432,15 +618,11 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
           ruleRow(Icon(Icons.access_time, color: blackColor, size: 18.0),
               'Check out: 11:00 am'),
           heightSpace,
-          ruleRow(
-              Icon(FontAwesomeIcons.doorOpen, color: blackColor, size: 18.0),
-              'Self check-in with lockbox'),
-          heightSpace,
           ruleRow(Icon(Icons.smoke_free, color: blackColor, size: 18.0),
               'No smoking'),
           heightSpace,
           ruleRow(Icon(Icons.pets, color: blackColor, size: 18.0),
-              'Pets are allowed'),
+              'Pets are not allowed'),
         ],
       ),
     );
@@ -465,7 +647,9 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
     );
   }
 
-  additionalRules() {
+  additionalRules(Map hotelData) {
+    List policies = hotelData['policies'] ?? [];
+
     return Container(
       margin: EdgeInsets.all(fixPadding * 2.0),
       padding: EdgeInsets.all(fixPadding * 2.0),
@@ -491,19 +675,30 @@ class _SelectHotelDateState extends State<SelectHotelDate> {
           heightSpace,
           heightSpace,
           ColumnBuilder(
-            itemCount: ruleList.length,
+            itemCount: policies.length,
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.center,
             itemBuilder: (context, index) {
               return Container(
-                padding: (index != ruleList.length - 1)
+                padding: (index != policies.length - 1)
                     ? EdgeInsets.only(bottom: fixPadding)
                     : const EdgeInsets.all(0.0),
-                child: Text(
-                  'test',
-                  style: blackSmallTextStyle,
-                  textAlign: TextAlign.justify,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
+                      style: blackSmallTextStyle,
+                    ),
+                    Expanded(
+                      child: Text(
+                        policies[index]['description'] ?? '',
+                        style: blackSmallTextStyle,
+                        textAlign: TextAlign.justify,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },

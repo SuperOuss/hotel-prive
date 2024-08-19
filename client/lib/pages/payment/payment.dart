@@ -5,18 +5,20 @@ import 'package:hotel_prive/constant/constant.dart';
 import 'package:hotel_prive/pages/bottom_bar.dart';
 
 class Payment extends StatefulWidget {
-  const Payment({super.key});
+  final String? selectedOfferId;
+  final String? email;
+  final int? offerRetailRate;
+
+  const Payment({Key? key, this.selectedOfferId, this.email, this.offerRetailRate}) : super(key: key);
 
   @override
   _PaymentState createState() => _PaymentState();
 }
 
 class _PaymentState extends State<Payment> {
-  bool amazon = true,
-      card = false,
-      paypal = false,
-      skrill = false,
-      cashOn = false;
+  
+  bool card = false,
+      paypal = false;
 
   successOrderDialog() {
     showDialog(
@@ -68,7 +70,7 @@ class _PaymentState extends State<Payment> {
       setState(() {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const BottomBar()),
+          MaterialPageRoute(builder: (context) => BottomBar(email : widget.email)),
         );
       });
     });
@@ -77,6 +79,10 @@ class _PaymentState extends State<Payment> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+
+    // Print the email value
+    print('Email: ${widget.email}');
+
     return Scaffold(
       backgroundColor: whiteColor,
       appBar: AppBar(
@@ -129,16 +135,16 @@ class _PaymentState extends State<Payment> {
             padding: EdgeInsets.all(fixPadding * 2.0),
             color: lightPrimaryColor,
             child: Text(
-              'Pay \$64',
+              'Pay \$${widget.offerRetailRate}',
               style: blackBigTextStyle,
             ),
           ),
-          getPaymentTile(
-              'Pay on Delivery', 'assets/payment_icon/cash_on_delivery.png'),
-          getPaymentTile('Amazon Pay', 'assets/payment_icon/amazon_pay.png'),
+          // Comment out or remove other payment methods
+          // getPaymentTile('Pay on Delivery', 'assets/payment_icon/cash_on_delivery.png'),
+          // getPaymentTile('Amazon Pay', 'assets/payment_icon/amazon_pay.png'),
           getPaymentTile('Card', 'assets/payment_icon/card.png'),
           getPaymentTile('PayPal', 'assets/payment_icon/paypal.png'),
-          getPaymentTile('Skrill', 'assets/payment_icon/skrill.png'),
+          // getPaymentTile('Skrill', 'assets/payment_icon/skrill.png'),
           Container(height: fixPadding * 2.0),
         ],
       ),
@@ -148,45 +154,15 @@ class _PaymentState extends State<Payment> {
   getPaymentTile(String title, String imgPath) {
     return InkWell(
       onTap: () {
-        if (title == 'Pay on Delivery') {
+        if (title == 'Card') {
           setState(() {
-            cashOn = true;
-            amazon = false;
-            card = false;
-            paypal = false;
-            skrill = false;
-          });
-        } else if (title == 'Amazon Pay') {
-          setState(() {
-            cashOn = false;
-            amazon = true;
-            card = false;
-            paypal = false;
-            skrill = false;
-          });
-        } else if (title == 'Card') {
-          setState(() {
-            cashOn = false;
-            amazon = false;
             card = true;
             paypal = false;
-            skrill = false;
           });
         } else if (title == 'PayPal') {
           setState(() {
-            cashOn = false;
-            amazon = false;
             card = false;
             paypal = true;
-            skrill = false;
-          });
-        } else if (title == 'Skrill') {
-          setState(() {
-            cashOn = false;
-            amazon = false;
-            card = false;
-            paypal = false;
-            skrill = true;
           });
         }
       },
@@ -200,25 +176,15 @@ class _PaymentState extends State<Payment> {
           borderRadius: BorderRadius.circular(7.0),
           border: Border.all(
             width: 1.0,
-            color: (title == 'Pay on Delivery')
-                ? (cashOn)
+            color: (title == 'Card')
+                ? (card)
                     ? primaryColor
                     : Colors.grey[300]!
-                : (title == 'Amazon Pay')
-                    ? (amazon)
+                : (title == 'PayPal')
+                    ? (paypal)
                         ? primaryColor
                         : Colors.grey[300]!
-                    : (title == 'Card')
-                        ? (card)
-                            ? primaryColor
-                            : Colors.grey[300]!
-                        : (title == 'PayPal')
-                            ? (paypal)
-                                ? primaryColor
-                                : Colors.grey[300]!
-                            : (skrill)
-                                ? primaryColor
-                                : Colors.grey[300]!,
+                    : Colors.grey[300]!,
           ),
           color: whiteColor,
         ),
@@ -247,25 +213,15 @@ class _PaymentState extends State<Payment> {
                 borderRadius: BorderRadius.circular(10.0),
                 border: Border.all(
                   width: 1.5,
-                  color: (title == 'Pay on Delivery')
-                      ? (cashOn)
+                  color: (title == 'Card')
+                      ? (card)
                           ? primaryColor
                           : Colors.grey[300]!
-                      : (title == 'Amazon Pay')
-                          ? (amazon)
+                      : (title == 'PayPal')
+                          ? (paypal)
                               ? primaryColor
                               : Colors.grey[300]!
-                          : (title == 'Card')
-                              ? (card)
-                                  ? primaryColor
-                                  : Colors.grey[300]!
-                              : (title == 'PayPal')
-                                  ? (paypal)
-                                      ? primaryColor
-                                      : Colors.grey[300]!
-                                  : (skrill)
-                                      ? primaryColor
-                                      : Colors.grey[300]!,
+                          : Colors.grey[300]!,
                 ),
               ),
               child: Container(
@@ -274,25 +230,15 @@ class _PaymentState extends State<Payment> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(5.0),
-                  color: (title == 'Pay on Delivery')
-                      ? (cashOn)
+                  color: (title == 'Card')
+                      ? (card)
                           ? primaryColor
                           : Colors.transparent
-                      : (title == 'Amazon Pay')
-                          ? (amazon)
+                      : (title == 'PayPal')
+                          ? (paypal)
                               ? primaryColor
                               : Colors.transparent
-                          : (title == 'Card')
-                              ? (card)
-                                  ? primaryColor
-                                  : Colors.transparent
-                              : (title == 'PayPal')
-                                  ? (paypal)
-                                      ? primaryColor
-                                      : Colors.transparent
-                                  : (skrill)
-                                      ? primaryColor
-                                      : Colors.transparent,
+                          : Colors.transparent,
                 ),
               ),
             ),

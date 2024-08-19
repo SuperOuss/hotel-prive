@@ -27,6 +27,7 @@ class _HotelListState extends State<HotelList> {
   void initState() {
     super.initState();
     initialize();
+    print('email: ${widget.email}');
   }
 
   Future<void> initialize() async {

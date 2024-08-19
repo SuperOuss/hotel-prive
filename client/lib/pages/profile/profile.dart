@@ -128,7 +128,7 @@ class Profile extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(5.0),
                           image: const DecorationImage(
-                            image: AssetImage('assets/user.jpg'),
+                            image: AssetImage('assets/profil.jpg'),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -138,12 +138,12 @@ class Profile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'Ellison Perry',
+                            'Tali Oussama',
                             style: blackBigTextStyle,
                           ),
                           heightSpace,
                           Text(
-                            '123456789',
+                            '+212660451673',
                             style: greySmallTextStyle,
                           ),
                         ],

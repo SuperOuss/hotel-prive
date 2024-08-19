@@ -76,6 +76,8 @@ app.use('/v1', authRouter); import authRouter from './routes/v1/auth.js'; //Auth
 app.use('/v1', profile); import profile from './routes/v1/profile.js';//User profile endpoints
 app.use('/v1', search); import search from './routes/v1/search.js';//search endpoint
 app.use('/v1', communications); import communications from './routes/v1/communication.js' //transactions import and processing back end
+app.use('/v1', booking); import booking from './routes/v1/booking.js' //transactions import and processing back end
+
 
 /* //Logging through Sentry 
 Sentry.init({

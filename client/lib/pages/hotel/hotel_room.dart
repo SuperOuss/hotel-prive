@@ -45,6 +45,7 @@ class _HotelRoomState extends State<HotelRoom> {
         });
       });
     }
+    print('email: ${widget.email}');
   }
 
   Future<void> _fetchAndSetHotelData(String hotelId) async {
@@ -189,6 +190,7 @@ class _HotelRoomState extends State<HotelRoom> {
                             type: PageTransitionType.rightToLeft,
                             child: SelectHotelDate(
                              hotelData: fullHotelData!,
+                             email: widget.email,
                             )));
                   },
                   child: Container(

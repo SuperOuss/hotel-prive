@@ -197,26 +197,36 @@ router.post('/get-rate', async (req, res) => {
   console.log("get single hotel rates endpoint hit");
   console.log(req.body);
 
-  const { checkin, checkout, hotelIds } = req.body;
-  const hotelId = hotelIds[0];
+  const { firstDate, lastDate, hotelId } = req.body;
+
+  const formattedCheckin = new Date(firstDate).toISOString().split('T')[0];
+  const formattedCheckout = new Date(lastDate).toISOString().split('T')[0];
+  console.log(formattedCheckin, formattedCheckout);
 
   try {
     // Fetch rates for the provided hotel ID
-    const ratesData = await fetchRate(hotelId, checkin, checkout);
-
+    const ratesData = await fetchRate(hotelId, formattedCheckin, formattedCheckout);
+  
     // Access the first element of ratesData
     const firstRateData = ratesData[0];
-
+  
     // Extract and organize the required data
     const roomTypeDetails = firstRateData.roomTypes.map(roomType => {
+      const offerRetailRate = Math.round(roomType.offerRetailRate.amount);
+      const suggestedSellingPrice = Math.round(roomType.suggestedSellingPrice.amount);
+  
+      // Calculate the percentage difference
+      const percentageDifference = ((suggestedSellingPrice - offerRetailRate) / offerRetailRate) * 100;
+  
       return {
-        offerRetailRate: roomType.offerRetailRate,
-        suggestedSellingPrice: roomType.suggestedSellingPrice,
+        offerRetailRate: { ...roomType.offerRetailRate, amount: offerRetailRate },
+        suggestedSellingPrice: { ...roomType.suggestedSellingPrice, amount: suggestedSellingPrice },
         offerId: roomType.offerId,
         mappedRoomId: roomType.rates[0].mappedRoomId,
         boardName: roomType.rates[0].boardName,
         name: roomType.rates[0].name,
-        cancellationPolicy: roomType.rates[0].cancellationPolicies
+        cancellationPolicy: roomType.rates[0].cancellationPolicies,
+        percentageDifference: percentageDifference.toFixed(2) // Format to 2 decimal places
       };
     });
 
@@ -233,7 +243,7 @@ router.post('/get-rate', async (req, res) => {
 //functions
 
 async function fetchRate(hotelId, checkin, checkout) {
-  console.log("Fetching rates for hotel:", hotelId);
+  console.log("Fetching rates for hotel:", hotelId, checkin, checkout);
   try {
     const response = await axios.post('https://api.liteapi.travel/v3.0/hotels/rates', {
       hotelIds: [hotelId],  // Single hotelId wrapped in an array
@@ -251,7 +261,7 @@ async function fetchRate(hotelId, checkin, checkout) {
         'Content-Type': 'application/json'
       }
     });
-
+    console.log(response.data);
     return response.data.data;  // Return the raw response data
   } catch (error) {
     console.error(`Error fetching rates for hotel ${hotelId}:`, error);
@@ -282,7 +292,7 @@ const getAndCountDeals = async (lat, lon, countryCode, city) => {
       checkin: formattedCheckIn,
       checkout: formattedCheckOut,
       limit: 10,
-      margin: 0
+      margin: -10
     };
 
     try {
@@ -364,7 +374,7 @@ const processResponseData = (response) => {
 
         console.log(`Hotel ID: ${hotel.hotelId}, First RoomType Offer Retail Rate: ${offerRetailRate}, Suggested Selling Price: ${suggestedSellingPrice}`);
 
-        const tenPercentLess = suggestedSellingPrice * 0.90;
+        const tenPercentLess = suggestedSellingPrice * 0.80;
         if (offerRetailRate <= tenPercentLess) {
           dealCount++;
         } else {
@@ -408,7 +418,7 @@ async function fetchRates(hotelIds) {
 
     // Check-out date: Three days after check-in
     const checkOutDate = new Date(checkInDate);
-    checkOutDate.setDate(checkInDate.getDate() + 3);
+    checkOutDate.setDate(checkInDate.getDate() + 1);
 
     // Format dates to YYYY-MM-DD (ISO 8601 format)
     const formattedCheckIn = checkInDate.toISOString().split('T')[0];

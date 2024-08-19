@@ -282,14 +282,14 @@ class _HomneState extends State<Homne> {
                   Navigator.push(
                     context,
                     PageTransition(
-                      type: PageTransitionType.fade,
-                      duration: const Duration(milliseconds: 1000),
-                      child: HotelList(
-                        hotelIds: (item['hotelIds'] as List<dynamic>?)
-                            ?.map((id) => id.toString())
-                            .toList(), // Convert hotelIds to List<String>
-                      ),
-                    ),
+                        type: PageTransitionType.fade,
+                        duration: const Duration(milliseconds: 1000),
+                        child: HotelList(
+                          hotelIds: (item['hotelIds'] as List<dynamic>?)
+                              ?.map((id) => id.toString())
+                              .toList(), // Convert hotelIds to List<String>
+                          email: widget.email, // Pass the email
+                        )),
                   );
                 },
                 child: Container(
@@ -392,10 +392,10 @@ class _HomneState extends State<Homne> {
                       PageTransition(
                           type: PageTransitionType.fade,
                           duration: const Duration(milliseconds: 1000),
-                           child: HotelRoom(
-                                    hotelData: item,
-                                    email: widget.email,
-                                  )));
+                          child: HotelRoom(
+                            hotelData: item,
+                            email: widget.email,
+                          )));
                 },
                 child: Container(
                   width: 130.0,
@@ -476,7 +476,7 @@ class _HomneState extends State<Homne> {
                             ),
                             const SizedBox(height: 5.0),
                             Text(
-                              'From \$${item['suggestedSellingPrice']}/person',
+                              'From \$${item['suggestedSellingPrice']}/night',
                               style:
                                   TextStyle(fontSize: 12, color: Colors.black),
                             ),
