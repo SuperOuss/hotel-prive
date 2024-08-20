@@ -25,6 +25,42 @@ PODS:
   - PhoneNumberKit/PhoneNumberKitCore (3.8.0)
   - PhoneNumberKit/UIKit (3.8.0):
     - PhoneNumberKit/PhoneNumberKitCore
+  - Stripe (23.28.1):
+    - StripeApplePay (= 23.28.1)
+    - StripeCore (= 23.28.1)
+    - StripePayments (= 23.28.1)
+    - StripePaymentsUI (= 23.28.1)
+    - StripeUICore (= 23.28.1)
+  - stripe_ios (0.0.1):
+    - Flutter
+    - Stripe (~> 23.28.0)
+    - StripeApplePay (~> 23.28.0)
+    - StripeFinancialConnections (~> 23.28.0)
+    - StripePayments (~> 23.28.0)
+    - StripePaymentSheet (~> 23.28.0)
+    - StripePaymentsUI (~> 23.28.0)
+  - StripeApplePay (23.28.1):
+    - StripeCore (= 23.28.1)
+  - StripeCore (23.28.1)
+  - StripeFinancialConnections (23.28.1):
+    - StripeCore (= 23.28.1)
+    - StripeUICore (= 23.28.1)
+  - StripePayments (23.28.1):
+    - StripeCore (= 23.28.1)
+    - StripePayments/Stripe3DS2 (= 23.28.1)
+  - StripePayments/Stripe3DS2 (23.28.1):
+    - StripeCore (= 23.28.1)
+  - StripePaymentSheet (23.28.1):
+    - StripeApplePay (= 23.28.1)
+    - StripeCore (= 23.28.1)
+    - StripePayments (= 23.28.1)
+    - StripePaymentsUI (= 23.28.1)
+  - StripePaymentsUI (23.28.1):
+    - StripeCore (= 23.28.1)
+    - StripePayments (= 23.28.1)
+    - StripeUICore (= 23.28.1)
+  - StripeUICore (23.28.1):
+    - StripeCore (= 23.28.1)
   - Toast (4.1.1)
 
 DEPENDENCIES:
@@ -35,12 +71,21 @@ DEPENDENCIES:
   - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
   - GoogleMaps (< 10.0, >= 8.4)
   - libphonenumber_plugin (from `.symlinks/plugins/libphonenumber_plugin/ios`)
+  - stripe_ios (from `.symlinks/plugins/stripe_ios/ios`)
 
 SPEC REPOS:
   trunk:
     - Google-Maps-iOS-Utils
     - GoogleMaps
     - PhoneNumberKit
+    - Stripe
+    - StripeApplePay
+    - StripeCore
+    - StripeFinancialConnections
+    - StripePayments
+    - StripePaymentSheet
+    - StripePaymentsUI
+    - StripeUICore
     - Toast
 
 EXTERNAL SOURCES:
@@ -54,6 +99,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
   libphonenumber_plugin:
     :path: ".symlinks/plugins/libphonenumber_plugin/ios"
+  stripe_ios:
+    :path: ".symlinks/plugins/stripe_ios/ios"
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
@@ -64,6 +111,15 @@ SPEC CHECKSUMS:
   GoogleMaps: c74e02e00db0be27b165516bde753826e2652b9c
   libphonenumber_plugin: 48bf4078546377eedaab4aa54978cd0f6fa23072
   PhoneNumberKit: ec00ab8cef5342c1dc49fadb99d23fa7e66cf0ef
+  Stripe: 20e24971647daa5750e7764faa1e8aefe4917243
+  stripe_ios: 91946e5c07e0a0dc0e1484ee6659e1f90a302cf3
+  StripeApplePay: 5b098a0ba6136f4b587e03f5a3776461b4f20dd4
+  StripeCore: 880a68482cf78d4745c5213c2fd3446efc73574b
+  StripeFinancialConnections: 49a19ca17dbb3055a8b559a1e3adfe769784a8f8
+  StripePayments: 3af5b03fa1831c301a4d1621eb0e790280dccb46
+  StripePaymentSheet: 8321efebb6d104add8fce929286d414545913114
+  StripePaymentsUI: 4c35e12ebcd4bd9bd21e379f03f730bee097250d
+  StripeUICore: 22b314dc9f7ea8814d0f9eeba0ddb5e4b77f34f3
   Toast: 1f5ea13423a1e6674c4abdac5be53587ae481c4e
 
 PODFILE CHECKSUM: c241055123c02a74d8c8938ea45784cee97a331d

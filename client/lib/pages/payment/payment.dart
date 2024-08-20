@@ -3,22 +3,94 @@
 import 'package:flutter/material.dart';
 import 'package:hotel_prive/constant/constant.dart';
 import 'package:hotel_prive/pages/bottom_bar.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 class Payment extends StatefulWidget {
   final String? selectedOfferId;
   final String? email;
   final int? offerRetailRate;
 
-  const Payment({Key? key, this.selectedOfferId, this.email, this.offerRetailRate}) : super(key: key);
+  const Payment(
+      {Key? key, this.selectedOfferId, this.email, this.offerRetailRate})
+      : super(key: key);
 
   @override
   _PaymentState createState() => _PaymentState();
 }
 
 class _PaymentState extends State<Payment> {
-  
-  bool card = false,
-      paypal = false;
+  bool card = false, paypal = false;
+  late String offerId;
+  late String paymentIntent;
+  late String secretKey;
+  late String prebookId;
+  bool _ready = false; // Define the _ready variable
+  String stripeSecret = 'sk_test_51OyYnVA4FXPoRk9YIAaZdfjo0hotIV2M4yPqCAaUQMr6FpsUJ1Rp99yJvsE5zohqFhtitwd1eoX7358oewt1GYNM00YGWZ80lK';
+
+  @override
+  void initState() {
+    super.initState();
+    offerId = widget.selectedOfferId ??
+        'defaultOfferId'; // Replace 'defaultOfferId' with your default value
+    prebook(offerId);
+  }
+
+  Future<void> prebook(String offerId) async {
+    print('prebook: offerId = $offerId'); // Debug print
+    final url = Uri.parse('http://localhost:3000/v1/prebook');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',// Add authorization header if needed
+      },
+      body: jsonEncode({'offerId': offerId}),
+    );
+
+    if (response.statusCode == 200) {
+      // Parse the JSON response
+      final data = jsonDecode(response.body);
+      print(data['data']['secretKey']);
+      print(data['data']['transactionId']);
+      setState(() {
+        prebookId = data['data']['prebookId'];
+        paymentIntent = data['data']['transactionId'];
+        secretKey = data['data']['secretKey'];
+      });
+    } else {
+      // Handle error response
+      print('Failed to prebook: ${response.body}');
+    }
+  }
+
+  Future<void> initPaymentSheet() async {
+    try {
+      // 2. initialize the payment sheet
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          // Set to true for custom flow
+          customFlow: false,
+          // Main params
+          merchantDisplayName: 'Hotel Privé',
+          paymentIntentClientSecret: paymentIntent,
+          // Customer keys
+          //customerEphemeralKeySecret: paymentIntent,
+          customerId: prebookId,
+          // Extra options
+          style: ThemeMode.dark,
+        ),
+      );
+      setState(() {
+        _ready = true;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+      rethrow;
+    }
+  }
 
   successOrderDialog() {
     showDialog(
@@ -70,7 +142,8 @@ class _PaymentState extends State<Payment> {
       setState(() {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => BottomBar(email : widget.email)),
+          MaterialPageRoute(
+              builder: (context) => BottomBar(email: widget.email)),
         );
       });
     });
@@ -109,7 +182,10 @@ class _PaymentState extends State<Payment> {
             children: <Widget>[
               InkWell(
                 borderRadius: BorderRadius.circular(15.0),
-                onTap: () => successOrderDialog(),
+                onTap: () async {
+                  await initPaymentSheet();
+                  successOrderDialog();
+                },
                 child: Container(
                   height: 50.0,
                   width: width - fixPadding * 4.0,
